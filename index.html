@@ -2192,11 +2192,11 @@
                     <label>显示样式</label>
                     <div class="button-group">
                         <button class="option-btn ${item.displayStyle === 'icon' ? 'active' : ''}"
-                                onclick="updateEditorItem('displayStyle', 'icon')">
+                                data-action="updateEditorItem" data-field="displayStyle" data-value="icon">
                             🎨 图标样式
                         </button>
                         <button class="option-btn ${item.displayStyle === 'textbox' ? 'active' : ''}"
-                                onclick="updateEditorItem('displayStyle', 'textbox')">
+                                data-action="updateEditorItem" data-field="displayStyle" data-value="textbox">
                             💬 文本框样式
                         </button>
                     </div>
@@ -2204,28 +2204,28 @@
                 <div class="form-group">
                     <label>标题（可选）</label>
                     <input type="text" value="${item.title}" placeholder="留空则不显示标题"
-                           onchange="updateEditorItem('title', this.value)">
+                           data-field="title">
                 </div>
                 <div class="form-group">
                     <label>副标题（可选）</label>
                     <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
-                           onchange="updateEditorItem('subtitle', this.value)">
+                           data-field="subtitle">
                 </div>
                 <div class="form-group">
                     <label>颜色</label>
                     <input type="color" value="${item.color}"
-                           onchange="updateEditorItem('color', this.value)">
+                           data-field="color">
                 </div>
                 ${item.displayStyle === 'icon' ? `
                     <div class="form-group">
                         <label>形状</label>
                         <div class="button-group">
                             <button class="option-btn ${item.shape === 'circle' ? 'active' : ''}"
-                                    onclick="updateEditorItem('shape', 'circle')">
+                                    data-action="updateEditorItem" data-field="shape" data-value="circle">
                                 ⭕ 圆形
                             </button>
                             <button class="option-btn ${item.shape === 'square' ? 'active' : ''}"
-                                    onclick="updateEditorItem('shape', 'square')">
+                                    data-action="updateEditorItem" data-field="shape" data-value="square">
                                 ◻️ 方形
                             </button>
                         </div>
@@ -2233,13 +2233,13 @@
                     <div class="form-group">
                         <label>Emoji</label>
                         <div id="editor-emojis-${item.id}"></div>
-                        <button class="btn-add-emoji" onclick="addEmojiInEditor()">+ 添加Emoji</button>
+                        <button class="btn-add-emoji" data-action="addEmojiInEditor">+ 添加Emoji</button>
                     </div>
                 ` : `
                     <div class="form-group">
                         <label>文本框内容</label>
                         <textarea placeholder="输入文字和emoji"
-                                  onchange="updateEditorItem('boxContent', this.value)"
+                                  data-field="boxContent"
                                   style="min-height: 80px;">${item.boxContent || ''}</textarea>
                         <div class="style-help">
                             支持Markdown：<code>**粗体**</code> <code>*斜体*</code> <code>~~删除线~~</code> <code>==高亮==</code>
@@ -2249,11 +2249,11 @@
                         <label>文本框样式</label>
                         <div class="button-group">
                             <button class="option-btn ${item.boxStyle === 'rounded' ? 'active' : ''}"
-                                    onclick="updateEditorItem('boxStyle', 'rounded')">
+                                    data-action="updateEditorItem" data-field="boxStyle" data-value="rounded">
                                 ▢ 圆角矩形
                             </button>
                             <button class="option-btn ${item.boxStyle === 'rectangle' ? 'active' : ''}"
-                                    onclick="updateEditorItem('boxStyle', 'rectangle')">
+                                    data-action="updateEditorItem" data-field="boxStyle" data-value="rectangle">
                                 ▭ 长方形
                             </button>
                         </div>
@@ -2263,30 +2263,30 @@
                         <div style="display: flex; gap: 5px; align-items: center;">
                             <input type="text" value="${item.externalEmoji || ''}" placeholder="选择emoji"
                                    style="flex: 1; font-size: 24px; text-align: center;"
-                                   onchange="updateEditorItem('externalEmoji', this.value)">
-                            <button class="btn-pick-emoji" onclick="openEmojiPickerInEditor('externalEmoji')">选择</button>
+                                   data-field="externalEmoji">
+                            <button class="btn-pick-emoji" data-action="openEmojiPickerInEditor" data-field="externalEmoji">选择</button>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>框外Emoji位置</label>
                         <div class="button-group">
                             <button class="option-btn ${item.externalEmojiPosition === 'top' ? 'active' : ''}"
-                                    onclick="updateEditorItem('externalEmojiPosition', 'top')"
+                                    data-action="updateEditorItem" data-field="externalEmojiPosition" data-value="top"
                                     style="flex: 0 0 calc(50% - 4px);">
                                 ⬆️ 上方
                             </button>
                             <button class="option-btn ${item.externalEmojiPosition === 'bottom' ? 'active' : ''}"
-                                    onclick="updateEditorItem('externalEmojiPosition', 'bottom')"
+                                    data-action="updateEditorItem" data-field="externalEmojiPosition" data-value="bottom"
                                     style="flex: 0 0 calc(50% - 4px);">
                                 ⬇️ 下方
                             </button>
                             <button class="option-btn ${item.externalEmojiPosition === 'left' ? 'active' : ''}"
-                                    onclick="updateEditorItem('externalEmojiPosition', 'left')"
+                                    data-action="updateEditorItem" data-field="externalEmojiPosition" data-value="left"
                                     style="flex: 0 0 calc(50% - 4px);">
                                 ⬅️ 左侧
                             </button>
                             <button class="option-btn ${item.externalEmojiPosition === 'right' ? 'active' : ''}"
-                                    onclick="updateEditorItem('externalEmojiPosition', 'right')"
+                                    data-action="updateEditorItem" data-field="externalEmojiPosition" data-value="right"
                                     style="flex: 0 0 calc(50% - 4px);">
                                 ➡️ 右侧
                             </button>
@@ -2300,9 +2300,59 @@
                 renderEditorEmojis(item.id, item.emojis);
             }
 
+            // 添加事件委托监听器
+            attachEditorEventListeners();
+
             // 显示编辑器
             document.getElementById('floatingEditorOverlay').classList.add('show');
             document.getElementById('floatingEditor').classList.add('show');
+        }
+
+        // 为编辑器附加事件监听器
+        function attachEditorEventListeners() {
+            const editorContent = document.getElementById('floatingEditorContent');
+
+            // 移除旧的监听器（如果有）
+            const newEditor = editorContent.cloneNode(true);
+            editorContent.parentNode.replaceChild(newEditor, editorContent);
+
+            // 按钮点击事件委托
+            newEditor.addEventListener('click', function(e) {
+                const button = e.target.closest('[data-action]');
+                if (!button) return;
+
+                const action = button.dataset.action;
+                const field = button.dataset.field;
+                const value = button.dataset.value;
+
+                if (action === 'updateEditorItem' && field && value !== undefined) {
+                    updateEditorItem(field, value);
+                } else if (action === 'addEmojiInEditor') {
+                    addEmojiInEditor();
+                } else if (action === 'openEmojiPickerInEditor' && field) {
+                    openEmojiPickerInEditor(field);
+                }
+            });
+
+            // 输入框和文本域的change事件委托
+            newEditor.addEventListener('change', function(e) {
+                const field = e.target.dataset.field;
+                if (field) {
+                    updateEditorItem(field, e.target.value);
+                }
+            });
+
+            // 实时输入事件（针对文本输入框）
+            newEditor.addEventListener('input', function(e) {
+                const field = e.target.dataset.field;
+                if (field && (e.target.type === 'text' || e.target.tagName === 'TEXTAREA')) {
+                    // 使用防抖，避免频繁更新
+                    clearTimeout(window.editorInputTimeout);
+                    window.editorInputTimeout = setTimeout(() => {
+                        updateEditorItem(field, e.target.value);
+                    }, 300);
+                }
+            });
         }
 
         // 关闭浮动编辑器
@@ -2347,23 +2397,27 @@
                 input.style.padding = '8px';
                 input.style.border = '1px solid #ddd';
                 input.style.borderRadius = '6px';
-                input.onchange = () => {
+                input.dataset.emojiIndex = index;
+                input.addEventListener('change', function() {
                     const item = items.find(i => i.id === itemId);
                     if (item) {
-                        item.emojis[index] = input.value;
+                        item.emojis[index] = this.value;
                         generateAllVersions();
                     }
-                };
+                });
 
                 const pickBtn = document.createElement('button');
                 pickBtn.className = 'btn-pick-emoji';
                 pickBtn.textContent = '选择';
-                pickBtn.onclick = () => openEmojiPickerInEditor('emoji', index);
+                pickBtn.dataset.emojiIndex = index;
+                pickBtn.addEventListener('click', function() {
+                    openEmojiPickerInEditor('emoji', index);
+                });
 
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'btn-remove-emoji';
                 removeBtn.textContent = '×';
-                removeBtn.onclick = () => {
+                removeBtn.addEventListener('click', function() {
                     const item = items.find(i => i.id === itemId);
                     if (item) {
                         item.emojis.splice(index, 1);
@@ -2373,7 +2427,7 @@
                         renderEditorEmojis(itemId, item.emojis);
                         generateAllVersions();
                     }
-                };
+                });
 
                 emojiDiv.appendChild(input);
                 emojiDiv.appendChild(pickBtn);
