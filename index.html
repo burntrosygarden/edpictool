@@ -781,8 +781,11 @@
 
         /* 图标样式 */
         .icon-container {
-            width: 120px;
-            height: 120px;
+            min-width: 120px;
+            min-height: 120px;
+            width: auto;
+            height: auto;
+            max-width: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2478,6 +2481,15 @@
                 const value = button.dataset.value;
 
                 if (action === 'updateEditorItem' && field && value !== undefined) {
+                    // 更新按钮组的active状态
+                    const buttonGroup = button.closest('.button-group');
+                    if (buttonGroup) {
+                        buttonGroup.querySelectorAll('.option-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        button.classList.add('active');
+                    }
+
                     updateEditorItem(field, value);
                 } else if (action === 'addEmojiInEditor') {
                     addEmojiInEditor();
