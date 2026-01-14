@@ -288,6 +288,40 @@
             margin-top: 4px;
         }
 
+        /* 按钮组样式 */
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .button-group .option-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .button-group .option-btn:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .button-group .option-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
         .emoji-input-group {
             display: flex;
             gap: 5px;
@@ -582,7 +616,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             position: absolute;
             min-width: 200px;
             max-width: 350px;
@@ -599,12 +633,12 @@
 
         /* 图标样式 */
         .icon-container {
-            width: 160px;
-            height: 160px;
+            width: 120px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 80px;
+            font-size: 60px;
             font-weight: normal;
         }
 
@@ -648,24 +682,32 @@
         /* 框外emoji */
         .external-emoji {
             position: absolute;
-            font-size: 60px;
+            font-size: 48px;
             z-index: 10;
         }
 
         .external-emoji.top {
-            top: -30px;
+            top: -65px;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .external-emoji.bottom {
-            bottom: -30px;
+            bottom: -65px;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .external-emoji.left {
-            left: -40px;
+            left: -65px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .external-emoji.right {
-            right: -40px;
+            right: -65px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .text-content {
@@ -727,9 +769,9 @@
             }
 
             .icon-container {
-                width: 140px;
-                height: 140px;
-                font-size: 70px;
+                width: 100px;
+                height: 100px;
+                font-size: 50px;
             }
 
             .text-box {
@@ -999,31 +1041,37 @@
             const layoutClass = layoutDirection === 'vertical' ? 'vertical' : '';
             
             let itemsHTML = '';
+            const hasTitle = items.some(it => it.title || it.subtitle);
+            const horizontalSpacing = hasTitle ? 280 : 220;
+            const verticalSpacing = hasTitle ? 250 : 180;
+
             items.forEach((item, itemIndex) => {
                 const emoji = combination[itemIndex] || '';
                 const pos = positions[itemIndex] || {};
                 let positionStyle = '';
-                
+
                 if (pos.x !== undefined && pos.y !== undefined) {
                     positionStyle = `position: absolute; left: ${pos.x}px; top: ${pos.y}px;`;
                 } else {
                     if (layoutDirection === 'vertical') {
-                        positionStyle = `position: absolute; top: ${itemIndex * 300}px; left: 50%; transform: translateX(-50%);`;
+                        positionStyle = `position: absolute; top: ${itemIndex * verticalSpacing}px; left: 50%; transform: translateX(-50%);`;
                     } else {
-                        positionStyle = `position: absolute; left: ${itemIndex * 350 + 50}px; top: 50%; transform: translateY(-50%);`;
+                        positionStyle = `position: absolute; left: ${itemIndex * horizontalSpacing + 50}px; top: 50%; transform: translateY(-50%);`;
                     }
                 }
-                
+
+                const hasText = item.title || item.subtitle;
+
                 if (item.displayStyle === 'icon') {
                     itemsHTML += `
                         <div class="comparison-item" style="${positionStyle}">
                             <div class="icon-container ${item.shape}" style="background-color: ${item.color}">
                                 ${emoji}
                             </div>
-                            <div class="text-content">
-                                <div class="title">${item.title || '标题'}</div>
-                                <div class="subtitle">${item.subtitle || '副标题'}</div>
-                            </div>
+                            ${hasText ? `<div class="text-content">
+                                ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                                ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                            </div>` : ''}
                         </div>
                     `;
                 } else {
@@ -1037,10 +1085,10 @@
                                     ${styledContent}
                                 </div>
                             </div>
-                            <div class="text-content">
-                                <div class="title">${item.title || '标题'}</div>
-                                <div class="subtitle">${item.subtitle || '副标题'}</div>
-                            </div>
+                            ${hasText ? `<div class="text-content">
+                                ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                                ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                            </div>` : ''}
                         </div>
                     `;
                 }
@@ -1081,18 +1129,18 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             min-width: 200px;
             max-width: 350px;
             position: absolute;
         }
         .icon-container {
-            width: 160px;
-            height: 160px;
+            width: 120px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 80px;
+            font-size: 60px;
             font-weight: normal;
         }
         .icon-container.circle {
@@ -1127,13 +1175,13 @@
         }
         .external-emoji {
             position: absolute;
-            font-size: 60px;
+            font-size: 48px;
             z-index: 10;
         }
-        .external-emoji.top { top: -30px; }
-        .external-emoji.bottom { bottom: -30px; }
-        .external-emoji.left { left: -40px; }
-        .external-emoji.right { right: -40px; }
+        .external-emoji.top { top: -65px; left: 50%; transform: translateX(-50%); }
+        .external-emoji.bottom { bottom: -65px; left: 50%; transform: translateX(-50%); }
+        .external-emoji.left { left: -65px; top: 50%; transform: translateY(-50%); }
+        .external-emoji.right { right: -65px; top: 50%; transform: translateY(-50%); }
         .text-content {
             text-align: center;
         }
@@ -1151,7 +1199,7 @@
         @media (max-width: 768px) {
             body { padding: 20px; }
             .comparison-container { flex-direction: column; gap: 30px; }
-            .icon-container { width: 140px; height: 140px; font-size: 70px; }
+            .icon-container { width: 100px; height: 100px; font-size: 50px; }
             .text-box { font-size: 20px; padding: 15px 20px; }
             .title { font-size: 28px; }
             .subtitle { font-size: 18px; }
@@ -1484,19 +1532,25 @@
                     </div>
                     <div class="form-group">
                         <label>显示样式</label>
-                        <select onchange="updateItem(${item.id}, 'displayStyle', this.value); renderConfig(); generateAllVersions();">
-                            <option value="icon" ${item.displayStyle === 'icon' ? 'selected' : ''}>图标样式</option>
-                            <option value="textbox" ${item.displayStyle === 'textbox' ? 'selected' : ''}>文本框样式</option>
-                        </select>
+                        <div class="button-group">
+                            <button class="option-btn ${item.displayStyle === 'icon' ? 'active' : ''}"
+                                    onclick="updateItem(${item.id}, 'displayStyle', 'icon'); renderConfig(); generateAllVersions();">
+                                🎨 图标样式
+                            </button>
+                            <button class="option-btn ${item.displayStyle === 'textbox' ? 'active' : ''}"
+                                    onclick="updateItem(${item.id}, 'displayStyle', 'textbox'); renderConfig(); generateAllVersions();">
+                                💬 文本框样式
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>标题（英文）<span class="required">*</span></label>
-                        <input type="text" value="${item.title}" required
+                        <label>标题（可选）</label>
+                        <input type="text" value="${item.title}" placeholder="留空则不显示标题"
                                oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions();">
                     </div>
                     <div class="form-group">
-                        <label>副标题（中文）</label>
-                        <input type="text" value="${item.subtitle}" 
+                        <label>副标题（可选）</label>
+                        <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
                                oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions();">
                     </div>
                     <div class="form-group">
@@ -1507,10 +1561,16 @@
                     ${item.displayStyle === 'icon' ? `
                         <div class="form-group">
                             <label>形状</label>
-                            <select onchange="updateItem(${item.id}, 'shape', this.value); generateAllVersions();">
-                                <option value="circle" ${item.shape === 'circle' ? 'selected' : ''}>圆形</option>
-                                <option value="square" ${item.shape === 'square' ? 'selected' : ''}>方形</option>
-                            </select>
+                            <div class="button-group">
+                                <button class="option-btn ${item.shape === 'circle' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'shape', 'circle'); generateAllVersions();">
+                                    ⭕ 圆形
+                                </button>
+                                <button class="option-btn ${item.shape === 'square' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'shape', 'square'); generateAllVersions();">
+                                    ◻️ 方形
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Emoji</label>
@@ -1538,10 +1598,16 @@
                         </div>
                         <div class="form-group">
                             <label>文本框样式</label>
-                            <select onchange="updateItem(${item.id}, 'boxStyle', this.value); generateAllVersions();">
-                                <option value="rounded" ${item.boxStyle === 'rounded' ? 'selected' : ''}>圆角矩形</option>
-                                <option value="rectangle" ${item.boxStyle === 'rectangle' ? 'selected' : ''}>长方形</option>
-                            </select>
+                            <div class="button-group">
+                                <button class="option-btn ${item.boxStyle === 'rounded' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'boxStyle', 'rounded'); generateAllVersions();">
+                                    ▢ 圆角矩形
+                                </button>
+                                <button class="option-btn ${item.boxStyle === 'rectangle' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'boxStyle', 'rectangle'); generateAllVersions();">
+                                    ▭ 长方形
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>框外Emoji</label>
@@ -1554,12 +1620,28 @@
                         </div>
                         <div class="form-group">
                             <label>框外Emoji位置</label>
-                            <select onchange="updateItem(${item.id}, 'externalEmojiPosition', this.value); generateAllVersions();">
-                                <option value="top" ${item.externalEmojiPosition === 'top' ? 'selected' : ''}>上方</option>
-                                <option value="bottom" ${item.externalEmojiPosition === 'bottom' ? 'selected' : ''}>下方</option>
-                                <option value="left" ${item.externalEmojiPosition === 'left' ? 'selected' : ''}>左侧</option>
-                                <option value="right" ${item.externalEmojiPosition === 'right' ? 'selected' : ''}>右侧</option>
-                            </select>
+                            <div class="button-group">
+                                <button class="option-btn ${item.externalEmojiPosition === 'top' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'externalEmojiPosition', 'top'); generateAllVersions();"
+                                        style="flex: 0 0 calc(50% - 4px);">
+                                    ⬆️ 上方
+                                </button>
+                                <button class="option-btn ${item.externalEmojiPosition === 'bottom' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'externalEmojiPosition', 'bottom'); generateAllVersions();"
+                                        style="flex: 0 0 calc(50% - 4px);">
+                                    ⬇️ 下方
+                                </button>
+                                <button class="option-btn ${item.externalEmojiPosition === 'left' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'externalEmojiPosition', 'left'); generateAllVersions();"
+                                        style="flex: 0 0 calc(50% - 4px);">
+                                    ⬅️ 左侧
+                                </button>
+                                <button class="option-btn ${item.externalEmojiPosition === 'right' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'externalEmojiPosition', 'right'); generateAllVersions();"
+                                        style="flex: 0 0 calc(50% - 4px);">
+                                    ➡️ 右侧
+                                </button>
+                            </div>
                         </div>
                     `}
                 `;
@@ -1753,12 +1835,17 @@
                     itemDiv.style.top = pos.y + 'px';
                 } else {
                     // 默认位置（自动布局）
+                    // 根据是否有标题/副标题调整间距
+                    const hasTitle = items.some(it => it.title || it.subtitle);
+                    const horizontalSpacing = hasTitle ? 280 : 220;
+                    const verticalSpacing = hasTitle ? 250 : 180;
+
                     if (layoutDirection === 'vertical') {
-                        itemDiv.style.top = (itemIndex * 300) + 'px';
+                        itemDiv.style.top = (itemIndex * verticalSpacing) + 'px';
                         itemDiv.style.left = '50%';
                         itemDiv.style.transform = 'translateX(-50%)';
                     } else {
-                        itemDiv.style.left = (itemIndex * 350 + 50) + 'px';
+                        itemDiv.style.left = (itemIndex * horizontalSpacing + 50) + 'px';
                         itemDiv.style.top = '50%';
                         itemDiv.style.transform = 'translateY(-50%)';
                     }
@@ -1766,18 +1853,20 @@
 
                 if (item.displayStyle === 'icon') {
                     const emoji = currentVersionData.combination[itemIndex] || '';
+                    const hasText = item.title || item.subtitle;
                     itemDiv.innerHTML = `
                         <div class="icon-container ${item.shape}" style="background-color: ${item.color}">
                             ${emoji}
                         </div>
-                        <div class="text-content">
-                            <div class="title">${item.title || '标题'}</div>
-                            <div class="subtitle">${item.subtitle || '副标题'}</div>
-                        </div>
+                        ${hasText ? `<div class="text-content">
+                            ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                            ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                        </div>` : ''}
                     `;
                 } else {
                     const externalEmoji = item.externalEmoji || '';
                     const styledContent = parseTextStyles(item.boxContent || '文本框内容');
+                    const hasText = item.title || item.subtitle;
                     itemDiv.innerHTML = `
                         <div class="text-box-container">
                             ${externalEmoji ? `<div class="external-emoji ${item.externalEmojiPosition}">${externalEmoji}</div>` : ''}
@@ -1785,10 +1874,10 @@
                                 ${styledContent}
                             </div>
                         </div>
-                        <div class="text-content">
-                            <div class="title">${item.title || '标题'}</div>
-                            <div class="subtitle">${item.subtitle || '副标题'}</div>
-                        </div>
+                        ${hasText ? `<div class="text-content">
+                            ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                            ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                        </div>` : ''}
                     `;
                 }
                 
