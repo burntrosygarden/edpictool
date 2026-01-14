@@ -124,29 +124,6 @@
             font-size: 14px;
         }
 
-        .layout-controls {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f9fafb;
-            border-radius: 8px;
-        }
-
-        .layout-controls label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #555;
-            margin-bottom: 8px;
-        }
-
-        .layout-controls select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
         .item-config {
             border: 2px solid #e5e5e5;
             border-radius: 8px;
@@ -974,16 +951,8 @@
             
             <div class="config-name-group">
                 <label>配置名称</label>
-                <input type="text" id="configName" placeholder="例如：Must vs Have to" 
-                       value="Must vs Have to" oninput="updateConfigName()">
-            </div>
-
-            <div class="layout-controls">
-                <label>布局方向</label>
-                <select id="layoutDirection" onchange="updateLayout()">
-                    <option value="horizontal">横向排列</option>
-                    <option value="vertical">纵向排列</option>
-                </select>
+                <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
+                       value="" oninput="updateConfigName()">
             </div>
 
             <div id="itemsConfig"></div>
@@ -1078,15 +1047,12 @@
         // 当前显示的版本索引
         let currentVersion = 0;
 
-        // 当前布局方向
-        let layoutDirection = 'horizontal';
-
         // 所有生成的版本（支持手动管理）
         let allVersions = [];
         let manualVersions = false; // 是否手动管理模式
 
         // 配置名称
-        let configName = 'Must vs Have to';
+        let configName = '';
 
         // 拖拽相关
         let draggedPreviewItem = null;
@@ -1165,9 +1131,8 @@
         // 加载配置数据
         function loadConfigData(config) {
             configName = config.name || '未命名配置';
-            layoutDirection = config.layout || 'horizontal';
             items = config.items || [];
-            
+
             // 加载版本信息
             if (config.versions && config.versions.length > 0) {
                 allVersions = config.versions;
@@ -1176,10 +1141,9 @@
             } else {
                 manualVersions = false;
             }
-            
+
             document.getElementById('configName').value = configName;
-            document.getElementById('layoutDirection').value = layoutDirection;
-            
+
             renderConfig();
             if (!manualVersions || allVersions.length === 0) {
                 generateAllVersions();
@@ -1190,23 +1154,47 @@
 
         // 更新配置名称
         function updateConfigName() {
-            configName = document.getElementById('configName').value || '未命名配置';
+            const inputValue = document.getElementById('configName').value;
+            if (inputValue) {
+                configName = inputValue;
+            } else {
+                // 如果配置名称为空，使用第一个文本框的内容
+                const firstTextBox = items.find(item => item.displayStyle === 'textbox' && item.boxContent);
+                if (firstTextBox && firstTextBox.boxContent) {
+                    // 去除Markdown标记，只保留纯文本
+                    const plainText = firstTextBox.boxContent
+                        .replace(/\*\*([^*]+)\*\*/g, '$1')
+                        .replace(/\*([^*]+)\*/g, '$1')
+                        .replace(/~~([^~]+)~~/g, '$1')
+                        .replace(/==([^=]+)==/g, '$1')
+                        .replace(/\[stroke\](.*?)\[\/stroke\]/g, '$1')
+                        .replace(/\[color:[^\]]+\](.*?)\[\/color\]/g, '$1')
+                        .replace(/\[highlight:[^\]]+\](.*?)\[\/highlight\]/g, '$1')
+                        .replace(/\[style:[^\]]+\](.*?)\[\/style\]/g, '$1')
+                        .trim();
+                    configName = plainText.substring(0, 30) || '未命名配置'; // 限制长度
+                } else {
+                    configName = '未命名配置';
+                }
+            }
         }
 
         // 保存配置
         function saveConfig() {
+            // 确保配置名称是最新的
+            updateConfigName();
+
             const config = {
                 name: configName,
-                layout: layoutDirection,
+                layout: 'horizontal', // 保持固定值以向后兼容
                 items: items,
                 versions: allVersions,
                 manualVersions: manualVersions,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
-            
+
             localStorage.setItem('comparisonConfig', JSON.stringify(config));
-            alert('配置已保存！');
         }
 
         // 加载配置
@@ -1234,6 +1222,9 @@
 
         // 导出HTML
         function exportHTML() {
+            // 确保配置名称是最新的
+            updateConfigName();
+
             const htmlContent = generateStandaloneHTML();
             const blob = new Blob([htmlContent], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
@@ -1249,12 +1240,10 @@
             const currentVersionData = allVersions[currentVersion] || {};
             const combination = currentVersionData.combination || [];
             const positions = currentVersionData.positions || {};
-            const layoutClass = layoutDirection === 'vertical' ? 'vertical' : '';
-            
+
             let itemsHTML = '';
             const hasTitle = items.some(it => it.title || it.subtitle);
             const horizontalSpacing = hasTitle ? 280 : 220;
-            const verticalSpacing = hasTitle ? 250 : 180;
 
             items.forEach((item, itemIndex) => {
                 const emoji = combination[itemIndex] || '';
@@ -1264,11 +1253,8 @@
                 if (pos.x !== undefined && pos.y !== undefined) {
                     positionStyle = `position: absolute; left: ${pos.x}px; top: ${pos.y}px;`;
                 } else {
-                    if (layoutDirection === 'vertical') {
-                        positionStyle = `position: absolute; top: ${itemIndex * verticalSpacing}px; left: 50%; transform: translateX(-50%);`;
-                    } else {
-                        positionStyle = `position: absolute; left: ${itemIndex * horizontalSpacing + 50}px; top: 50%; transform: translateY(-50%);`;
-                    }
+                    // 默认横向布局
+                    positionStyle = `position: absolute; left: ${itemIndex * horizontalSpacing + 50}px; top: 50%; transform: translateY(-50%);`;
                 }
 
                 const hasText = item.title || item.subtitle;
@@ -1455,16 +1441,19 @@
 
         // 导出JSON
         function exportJSON() {
+            // 确保配置名称是最新的
+            updateConfigName();
+
             const config = {
                 name: configName,
-                layout: layoutDirection,
+                layout: 'horizontal', // 保持固定值以向后兼容
                 items: items,
                 versions: allVersions,
                 manualVersions: manualVersions,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
-            
+
             const jsonContent = JSON.stringify(config, null, 2);
             const blob = new Blob([jsonContent], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1769,12 +1758,6 @@
             }
 
             return false;
-        }
-
-        // 更新布局方向
-        function updateLayout() {
-            layoutDirection = document.getElementById('layoutDirection').value;
-            updatePreview();
         }
 
         // 渲染配置面板
@@ -2276,21 +2259,14 @@
                     itemDiv.style.left = pos.x + 'px';
                     itemDiv.style.top = pos.y + 'px';
                 } else {
-                    // 默认位置（自动布局）
+                    // 默认位置（横向布局）
                     // 根据是否有标题/副标题调整间距
                     const hasTitle = items.some(it => it.title || it.subtitle);
                     const horizontalSpacing = hasTitle ? 280 : 220;
-                    const verticalSpacing = hasTitle ? 250 : 180;
 
-                    if (layoutDirection === 'vertical') {
-                        itemDiv.style.top = (itemIndex * verticalSpacing) + 'px';
-                        itemDiv.style.left = '50%';
-                        itemDiv.style.transform = 'translateX(-50%)';
-                    } else {
-                        itemDiv.style.left = (itemIndex * horizontalSpacing + 50) + 'px';
-                        itemDiv.style.top = '50%';
-                        itemDiv.style.transform = 'translateY(-50%)';
-                    }
+                    itemDiv.style.left = (itemIndex * horizontalSpacing + 50) + 'px';
+                    itemDiv.style.top = '50%';
+                    itemDiv.style.transform = 'translateY(-50%)';
                 }
 
                 if (item.displayStyle === 'icon') {
