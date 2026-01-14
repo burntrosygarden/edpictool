@@ -582,7 +582,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             position: absolute;
             min-width: 200px;
             max-width: 350px;
@@ -599,12 +599,12 @@
 
         /* 图标样式 */
         .icon-container {
-            width: 160px;
-            height: 160px;
+            width: 120px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 80px;
+            font-size: 60px;
             font-weight: normal;
         }
 
@@ -648,24 +648,32 @@
         /* 框外emoji */
         .external-emoji {
             position: absolute;
-            font-size: 60px;
+            font-size: 48px;
             z-index: 10;
         }
 
         .external-emoji.top {
-            top: -30px;
+            top: -65px;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .external-emoji.bottom {
-            bottom: -30px;
+            bottom: -65px;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .external-emoji.left {
-            left: -40px;
+            left: -65px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .external-emoji.right {
-            right: -40px;
+            right: -65px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .text-content {
@@ -727,9 +735,9 @@
             }
 
             .icon-container {
-                width: 140px;
-                height: 140px;
-                font-size: 70px;
+                width: 100px;
+                height: 100px;
+                font-size: 50px;
             }
 
             .text-box {
@@ -999,31 +1007,37 @@
             const layoutClass = layoutDirection === 'vertical' ? 'vertical' : '';
             
             let itemsHTML = '';
+            const hasTitle = items.some(it => it.title || it.subtitle);
+            const horizontalSpacing = hasTitle ? 280 : 220;
+            const verticalSpacing = hasTitle ? 250 : 180;
+
             items.forEach((item, itemIndex) => {
                 const emoji = combination[itemIndex] || '';
                 const pos = positions[itemIndex] || {};
                 let positionStyle = '';
-                
+
                 if (pos.x !== undefined && pos.y !== undefined) {
                     positionStyle = `position: absolute; left: ${pos.x}px; top: ${pos.y}px;`;
                 } else {
                     if (layoutDirection === 'vertical') {
-                        positionStyle = `position: absolute; top: ${itemIndex * 300}px; left: 50%; transform: translateX(-50%);`;
+                        positionStyle = `position: absolute; top: ${itemIndex * verticalSpacing}px; left: 50%; transform: translateX(-50%);`;
                     } else {
-                        positionStyle = `position: absolute; left: ${itemIndex * 350 + 50}px; top: 50%; transform: translateY(-50%);`;
+                        positionStyle = `position: absolute; left: ${itemIndex * horizontalSpacing + 50}px; top: 50%; transform: translateY(-50%);`;
                     }
                 }
-                
+
+                const hasText = item.title || item.subtitle;
+
                 if (item.displayStyle === 'icon') {
                     itemsHTML += `
                         <div class="comparison-item" style="${positionStyle}">
                             <div class="icon-container ${item.shape}" style="background-color: ${item.color}">
                                 ${emoji}
                             </div>
-                            <div class="text-content">
-                                <div class="title">${item.title || '标题'}</div>
-                                <div class="subtitle">${item.subtitle || '副标题'}</div>
-                            </div>
+                            ${hasText ? `<div class="text-content">
+                                ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                                ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                            </div>` : ''}
                         </div>
                     `;
                 } else {
@@ -1037,10 +1051,10 @@
                                     ${styledContent}
                                 </div>
                             </div>
-                            <div class="text-content">
-                                <div class="title">${item.title || '标题'}</div>
-                                <div class="subtitle">${item.subtitle || '副标题'}</div>
-                            </div>
+                            ${hasText ? `<div class="text-content">
+                                ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                                ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                            </div>` : ''}
                         </div>
                     `;
                 }
@@ -1081,18 +1095,18 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             min-width: 200px;
             max-width: 350px;
             position: absolute;
         }
         .icon-container {
-            width: 160px;
-            height: 160px;
+            width: 120px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 80px;
+            font-size: 60px;
             font-weight: normal;
         }
         .icon-container.circle {
@@ -1127,13 +1141,13 @@
         }
         .external-emoji {
             position: absolute;
-            font-size: 60px;
+            font-size: 48px;
             z-index: 10;
         }
-        .external-emoji.top { top: -30px; }
-        .external-emoji.bottom { bottom: -30px; }
-        .external-emoji.left { left: -40px; }
-        .external-emoji.right { right: -40px; }
+        .external-emoji.top { top: -65px; left: 50%; transform: translateX(-50%); }
+        .external-emoji.bottom { bottom: -65px; left: 50%; transform: translateX(-50%); }
+        .external-emoji.left { left: -65px; top: 50%; transform: translateY(-50%); }
+        .external-emoji.right { right: -65px; top: 50%; transform: translateY(-50%); }
         .text-content {
             text-align: center;
         }
@@ -1151,7 +1165,7 @@
         @media (max-width: 768px) {
             body { padding: 20px; }
             .comparison-container { flex-direction: column; gap: 30px; }
-            .icon-container { width: 140px; height: 140px; font-size: 70px; }
+            .icon-container { width: 100px; height: 100px; font-size: 50px; }
             .text-box { font-size: 20px; padding: 15px 20px; }
             .title { font-size: 28px; }
             .subtitle { font-size: 18px; }
@@ -1753,12 +1767,17 @@
                     itemDiv.style.top = pos.y + 'px';
                 } else {
                     // 默认位置（自动布局）
+                    // 根据是否有标题/副标题调整间距
+                    const hasTitle = items.some(it => it.title || it.subtitle);
+                    const horizontalSpacing = hasTitle ? 280 : 220;
+                    const verticalSpacing = hasTitle ? 250 : 180;
+
                     if (layoutDirection === 'vertical') {
-                        itemDiv.style.top = (itemIndex * 300) + 'px';
+                        itemDiv.style.top = (itemIndex * verticalSpacing) + 'px';
                         itemDiv.style.left = '50%';
                         itemDiv.style.transform = 'translateX(-50%)';
                     } else {
-                        itemDiv.style.left = (itemIndex * 350 + 50) + 'px';
+                        itemDiv.style.left = (itemIndex * horizontalSpacing + 50) + 'px';
                         itemDiv.style.top = '50%';
                         itemDiv.style.transform = 'translateY(-50%)';
                     }
@@ -1766,18 +1785,20 @@
 
                 if (item.displayStyle === 'icon') {
                     const emoji = currentVersionData.combination[itemIndex] || '';
+                    const hasText = item.title || item.subtitle;
                     itemDiv.innerHTML = `
                         <div class="icon-container ${item.shape}" style="background-color: ${item.color}">
                             ${emoji}
                         </div>
-                        <div class="text-content">
-                            <div class="title">${item.title || '标题'}</div>
-                            <div class="subtitle">${item.subtitle || '副标题'}</div>
-                        </div>
+                        ${hasText ? `<div class="text-content">
+                            ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                            ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                        </div>` : ''}
                     `;
                 } else {
                     const externalEmoji = item.externalEmoji || '';
                     const styledContent = parseTextStyles(item.boxContent || '文本框内容');
+                    const hasText = item.title || item.subtitle;
                     itemDiv.innerHTML = `
                         <div class="text-box-container">
                             ${externalEmoji ? `<div class="external-emoji ${item.externalEmojiPosition}">${externalEmoji}</div>` : ''}
@@ -1785,10 +1806,10 @@
                                 ${styledContent}
                             </div>
                         </div>
-                        <div class="text-content">
-                            <div class="title">${item.title || '标题'}</div>
-                            <div class="subtitle">${item.subtitle || '副标题'}</div>
-                        </div>
+                        ${hasText ? `<div class="text-content">
+                            ${item.title ? `<div class="title">${item.title}</div>` : ''}
+                            ${item.subtitle ? `<div class="subtitle">${item.subtitle}</div>` : ''}
+                        </div>` : ''}
                     `;
                 }
                 
