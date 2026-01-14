@@ -786,8 +786,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 60px;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 8px;
             font-weight: normal;
+        }
+
+        .icon-container .emoji-item {
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        /* 根据emoji数量自适应大小 */
+        .icon-container[data-emoji-count="1"] .emoji-item {
+            font-size: 60px;
+        }
+
+        .icon-container[data-emoji-count="2"] .emoji-item {
+            font-size: 45px;
+        }
+
+        .icon-container[data-emoji-count="3"] .emoji-item {
+            font-size: 35px;
+        }
+
+        .icon-container[data-emoji-count="4"] .emoji-item {
+            font-size: 30px;
+        }
+
+        .icon-container[data-emoji-count]:not([data-emoji-count="1"]):not([data-emoji-count="2"]):not([data-emoji-count="3"]):not([data-emoji-count="4"]) .emoji-item {
+            font-size: 24px;
         }
 
         .icon-container.circle {
@@ -2126,15 +2154,21 @@
                 }
 
                 if (item.displayStyle === 'icon') {
-                    const emoji = currentVersionData.combination[itemIndex] || '';
+                    // 获取该item的所有非空emoji
+                    const emojis = (item.emojis || ['']).filter(e => e.trim());
+                    const emojiCount = emojis.length || 1;
+                    const emojisHTML = emojis.length > 0
+                        ? emojis.map(e => `<span class="emoji-item">${e}</span>`).join('')
+                        : '<span class="emoji-item"></span>';
+
                     const hasText = item.title || item.subtitle;
                     itemDiv.innerHTML = `
                         <div class="item-actions">
                             <button class="item-action-btn edit" onclick="openItemEditor(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
                             <button class="item-action-btn delete" onclick="deleteItemFromCanvas(${item.id}); event.stopPropagation();" title="删除">🗑️</button>
                         </div>
-                        <div class="icon-container ${item.shape}" style="background-color: ${item.color}">
-                            ${emoji}
+                        <div class="icon-container ${item.shape}" style="background-color: ${item.color}" data-emoji-count="${emojiCount}">
+                            ${emojisHTML}
                         </div>
                         ${hasText ? `<div class="text-content">
                             ${item.title ? `<div class="title">${item.title}</div>` : ''}
