@@ -2527,7 +2527,7 @@
                 input.style.border = '1px solid #ddd';
                 input.style.borderRadius = '6px';
                 input.dataset.emojiIndex = index;
-                input.addEventListener('change', function() {
+                input.addEventListener('input', function() {
                     const item = items.find(i => i.id === itemId);
                     if (item) {
                         item.emojis[index] = this.value;
@@ -2597,7 +2597,7 @@
                 input.style.border = '1px solid #ddd';
                 input.style.borderRadius = '6px';
                 input.dataset.emojiIndex = index;
-                input.addEventListener('change', function() {
+                input.addEventListener('input', function() {
                     const item = items.find(i => i.id === itemId);
                     if (item) {
                         item.externalEmojis[index] = this.value;
