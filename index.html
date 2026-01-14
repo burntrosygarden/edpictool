@@ -411,7 +411,7 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            z-index: 3000;
             align-items: center;
             justify-content: center;
         }
@@ -828,34 +828,40 @@
         }
 
         /* 框外emoji */
-        .external-emoji {
+        .external-emojis-container {
             position: absolute;
-            font-size: 48px;
+            display: flex;
+            gap: 8px;
             z-index: 10;
+            flex-wrap: nowrap;
+            white-space: nowrap;
         }
 
-        .external-emoji.top {
-            top: -65px;
+        .external-emojis-container.top {
             left: 50%;
             transform: translateX(-50%);
         }
 
-        .external-emoji.bottom {
-            bottom: -65px;
+        .external-emojis-container.bottom {
             left: 50%;
             transform: translateX(-50%);
         }
 
-        .external-emoji.left {
-            left: -65px;
+        .external-emojis-container.left {
             top: 50%;
             transform: translateY(-50%);
+            flex-direction: column;
         }
 
-        .external-emoji.right {
-            right: -65px;
+        .external-emojis-container.right {
             top: 50%;
             transform: translateY(-50%);
+            flex-direction: column;
+        }
+
+        .external-emoji-item {
+            font-size: 48px;
+            line-height: 1;
         }
 
         .text-content {
@@ -1092,9 +1098,10 @@
                 items[0].emojis = ["🤔", "🧠", "👧"];
                 items[0].boxContent = "";
                 items[0].boxStyle = "rounded";
-                items[0].externalEmoji = "";
+                items[0].externalEmojis = [];
                 items[0].externalEmojiPosition = "top";
-                
+                items[0].externalEmojiDistance = 65;
+
                 // 右边：have to
                 items[1].title = "have to";
                 items[1].subtitle = "客观 - 规定";
@@ -1104,8 +1111,9 @@
                 items[1].emojis = ["📏", "❗", "⚖️"];
                 items[1].boxContent = "";
                 items[1].boxStyle = "rounded";
-                items[1].externalEmoji = "";
+                items[1].externalEmojis = [];
                 items[1].externalEmojiPosition = "top";
+                items[1].externalEmojiDistance = 65;
             }
             
             configName = 'Must vs Have to';
@@ -1238,12 +1246,25 @@
                         </div>
                     `;
                 } else {
-                    const externalEmoji = item.externalEmoji || '';
+                    const externalEmojis = item.externalEmojis || [];
+                    const distance = item.externalEmojiDistance || 65;
                     const styledContent = parseTextStyles(item.boxContent || '文本框内容');
+
+                    const externalEmojisHTML = externalEmojis.length > 0 ? `
+                        <div class="external-emojis-container ${item.externalEmojiPosition}" style="${
+                            item.externalEmojiPosition === 'top' ? `top: -${distance}px;` :
+                            item.externalEmojiPosition === 'bottom' ? `bottom: -${distance}px;` :
+                            item.externalEmojiPosition === 'left' ? `left: -${distance}px;` :
+                            `right: -${distance}px;`
+                        }">
+                            ${externalEmojis.map(emoji => `<span class="external-emoji-item">${emoji}</span>`).join('')}
+                        </div>
+                    ` : '';
+
                     itemsHTML += `
                         <div class="comparison-item" style="${positionStyle}">
                             <div class="text-box-container">
-                                ${externalEmoji ? `<div class="external-emoji ${item.externalEmojiPosition}">${externalEmoji}</div>` : ''}
+                                ${externalEmojisHTML}
                                 <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white;">
                                     ${styledContent}
                                 </div>
@@ -1336,15 +1357,22 @@
         .text-box.rectangle {
             border-radius: 4px;
         }
-        .external-emoji {
+        .external-emojis-container {
             position: absolute;
-            font-size: 48px;
+            display: flex;
+            gap: 8px;
             z-index: 10;
+            flex-wrap: nowrap;
+            white-space: nowrap;
         }
-        .external-emoji.top { top: -65px; left: 50%; transform: translateX(-50%); }
-        .external-emoji.bottom { bottom: -65px; left: 50%; transform: translateX(-50%); }
-        .external-emoji.left { left: -65px; top: 50%; transform: translateY(-50%); }
-        .external-emoji.right { right: -65px; top: 50%; transform: translateY(-50%); }
+        .external-emojis-container.top { left: 50%; transform: translateX(-50%); }
+        .external-emojis-container.bottom { left: 50%; transform: translateX(-50%); }
+        .external-emojis-container.left { top: 50%; transform: translateY(-50%); flex-direction: column; }
+        .external-emojis-container.right { top: 50%; transform: translateY(-50%); flex-direction: column; }
+        .external-emoji-item {
+            font-size: 48px;
+            line-height: 1;
+        }
         .text-content {
             text-align: center;
         }
@@ -1459,8 +1487,13 @@
         function selectEmoji(emoji) {
             const item = items.find(i => i.id === currentEmojiPicker.itemId);
             if (item) {
-                if (currentEmojiPicker.field === 'externalEmoji') {
-                    item.externalEmoji = emoji;
+                if (currentEmojiPicker.field === 'externalEmojis') {
+                    if (!item.externalEmojis) {
+                        item.externalEmojis = [];
+                    }
+                    if (item.externalEmojis[currentEmojiPicker.emojiIndex] !== undefined) {
+                        item.externalEmojis[currentEmojiPicker.emojiIndex] = emoji;
+                    }
                 } else if (item.emojis[currentEmojiPicker.emojiIndex] !== undefined) {
                     item.emojis[currentEmojiPicker.emojiIndex] = emoji;
                 }
@@ -1472,6 +1505,8 @@
                 if (currentEditingItemId === currentEmojiPicker.itemId) {
                     if (item.displayStyle === 'icon') {
                         renderEditorEmojis(item.id, item.emojis);
+                    } else {
+                        renderEditorExternalEmojis(item.id, item.externalEmojis || []);
                     }
                 }
 
@@ -1495,7 +1530,8 @@
                     if (item.displayStyle === 'icon') {
                         return item.emojis.filter(e => e.trim());
                     } else {
-                        return item.externalEmoji ? [item.externalEmoji] : [''];
+                        // 文本框样式不参与emoji组合版本生成
+                        return [''];
                     }
                 });
 
@@ -1528,7 +1564,8 @@
                     if (item.displayStyle === 'icon') {
                         return item.emojis.filter(e => e.trim());
                     } else {
-                        return item.externalEmoji ? [item.externalEmoji] : [''];
+                        // 文本框样式不参与emoji组合版本生成
+                        return [''];
                     }
                 });
 
@@ -1571,7 +1608,8 @@
                     const validEmojis = item.emojis.filter(e => e.trim());
                     return validEmojis.length > 0 ? validEmojis[0] : '';
                 } else {
-                    return item.externalEmoji || '';
+                    // 文本框样式不参与emoji组合
+                    return '';
                 }
             });
 
@@ -1615,8 +1653,9 @@
                 emojis: [""],
                 boxContent: "",
                 boxStyle: "rounded",
-                externalEmoji: "",
-                externalEmojiPosition: "top"
+                externalEmojis: [],
+                externalEmojiPosition: "top",
+                externalEmojiDistance: 65
             };
             items.push(newItem);
             renderConfig();
@@ -1784,12 +1823,14 @@
                         </div>
                         <div class="form-group">
                             <label>框外Emoji</label>
-                            <div style="display: flex; gap: 5px; align-items: center;">
-                                <input type="text" value="${item.externalEmoji}" placeholder="选择emoji" 
-                                       style="flex: 1; font-size: 24px; text-align: center;"
-                                       oninput="updateItem(${item.id}, 'externalEmoji', this.value); generateAllVersions();">
-                                <button class="btn-pick-emoji" onclick="openEmojiPicker(${item.id}, 0, 'externalEmoji')">选择</button>
-                            </div>
+                            <div class="emoji-input-group" id="external-emojis-${item.id}"></div>
+                            <button class="btn-add-emoji" onclick="addExternalEmoji(${item.id})">+ 添加框外Emoji</button>
+                        </div>
+                        <div class="form-group">
+                            <label>框外Emoji距离：<span id="distance-value-${item.id}">${item.externalEmojiDistance || 65}px</span></label>
+                            <input type="range" min="30" max="150" step="5" value="${item.externalEmojiDistance || 65}"
+                                   style="width: 100%;"
+                                   oninput="updateItem(${item.id}, 'externalEmojiDistance', parseInt(this.value)); document.getElementById('distance-value-${item.id}').textContent = this.value + 'px'; generateAllVersions();">
                         </div>
                         <div class="form-group">
                             <label>框外Emoji位置</label>
@@ -1822,8 +1863,68 @@
 
                 if (item.displayStyle === 'icon') {
                     renderEmojis(item.id, item.emojis);
+                } else {
+                    renderExternalEmojis(item.id, item.externalEmojis || []);
                 }
             });
+        }
+
+        // 渲染框外emoji列表
+        function renderExternalEmojis(itemId, externalEmojis) {
+            const container = document.getElementById(`external-emojis-${itemId}`);
+            if (!container) return;
+            container.innerHTML = '';
+
+            externalEmojis.forEach((emoji, index) => {
+                const emojiDiv = document.createElement('div');
+                emojiDiv.className = 'emoji-display';
+                emojiDiv.style.display = 'flex';
+                emojiDiv.style.alignItems = 'center';
+                emojiDiv.style.marginBottom = '5px';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = emoji;
+                input.placeholder = '输入emoji';
+                input.style.flex = '1';
+                input.oninput = () => {
+                    const item = items.find(i => i.id === itemId);
+                    item.externalEmojis[index] = input.value;
+                    generateAllVersions();
+                };
+
+                const pickBtn = document.createElement('button');
+                pickBtn.className = 'btn-pick-emoji';
+                pickBtn.textContent = '选择';
+                pickBtn.onclick = () => openEmojiPicker(itemId, index, 'externalEmojis');
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn-remove-emoji';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => {
+                    const item = items.find(i => i.id === itemId);
+                    item.externalEmojis.splice(index, 1);
+                    renderConfig();
+                    generateAllVersions();
+                };
+
+                emojiDiv.appendChild(input);
+                emojiDiv.appendChild(pickBtn);
+                emojiDiv.appendChild(removeBtn);
+                container.appendChild(emojiDiv);
+            });
+        }
+
+        // 添加框外emoji
+        function addExternalEmoji(itemId) {
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+                if (!item.externalEmojis) {
+                    item.externalEmojis = [];
+                }
+                item.externalEmojis.push("");
+                renderConfig();
+            }
         }
 
         // 渲染emoji输入框
@@ -2041,16 +2142,29 @@
                         </div>` : ''}
                     `;
                 } else {
-                    const externalEmoji = item.externalEmoji || '';
+                    const externalEmojis = item.externalEmojis || [];
+                    const distance = item.externalEmojiDistance || 65;
                     const styledContent = parseTextStyles(item.boxContent || '文本框内容');
                     const hasText = item.title || item.subtitle;
+
+                    const externalEmojisHTML = externalEmojis.length > 0 ? `
+                        <div class="external-emojis-container ${item.externalEmojiPosition}" style="${
+                            item.externalEmojiPosition === 'top' ? `top: -${distance}px;` :
+                            item.externalEmojiPosition === 'bottom' ? `bottom: -${distance}px;` :
+                            item.externalEmojiPosition === 'left' ? `left: -${distance}px;` :
+                            `right: -${distance}px;`
+                        }">
+                            ${externalEmojis.map(emoji => `<span class="external-emoji-item">${emoji}</span>`).join('')}
+                        </div>
+                    ` : '';
+
                     itemDiv.innerHTML = `
                         <div class="item-actions">
                             <button class="item-action-btn edit" onclick="openItemEditor(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
                             <button class="item-action-btn delete" onclick="deleteItemFromCanvas(${item.id}); event.stopPropagation();" title="删除">🗑️</button>
                         </div>
                         <div class="text-box-container">
-                            ${externalEmoji ? `<div class="external-emoji ${item.externalEmojiPosition}">${externalEmoji}</div>` : ''}
+                            ${externalEmojisHTML}
                             <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white;">
                                 ${styledContent}
                             </div>
@@ -2260,12 +2374,14 @@
                     </div>
                     <div class="form-group">
                         <label>框外Emoji</label>
-                        <div style="display: flex; gap: 5px; align-items: center;">
-                            <input type="text" value="${item.externalEmoji || ''}" placeholder="选择emoji"
-                                   style="flex: 1; font-size: 24px; text-align: center;"
-                                   data-field="externalEmoji">
-                            <button class="btn-pick-emoji" data-action="openEmojiPickerInEditor" data-field="externalEmoji">选择</button>
-                        </div>
+                        <div id="editor-external-emojis-${item.id}"></div>
+                        <button class="btn-add-emoji" data-action="addExternalEmojiInEditor">+ 添加框外Emoji</button>
+                    </div>
+                    <div class="form-group">
+                        <label>框外Emoji距离：<span id="editor-distance-value-${item.id}">${item.externalEmojiDistance || 65}px</span></label>
+                        <input type="range" min="30" max="150" step="5" value="${item.externalEmojiDistance || 65}"
+                               style="width: 100%;"
+                               data-field="externalEmojiDistance">
                     </div>
                     <div class="form-group">
                         <label>框外Emoji位置</label>
@@ -2298,6 +2414,8 @@
             // 如果是图标样式，渲染emoji列表
             if (item.displayStyle === 'icon') {
                 renderEditorEmojis(item.id, item.emojis);
+            } else {
+                renderEditorExternalEmojis(item.id, item.externalEmojis || []);
             }
 
             // 添加事件委托监听器
@@ -2329,6 +2447,8 @@
                     updateEditorItem(field, value);
                 } else if (action === 'addEmojiInEditor') {
                     addEmojiInEditor();
+                } else if (action === 'addExternalEmojiInEditor') {
+                    addExternalEmojiInEditor();
                 } else if (action === 'openEmojiPickerInEditor' && field) {
                     openEmojiPickerInEditor(field);
                 }
@@ -2342,15 +2462,24 @@
                 }
             });
 
-            // 实时输入事件（针对文本输入框）
+            // 实时输入事件（针对文本输入框和滑块）
             newEditor.addEventListener('input', function(e) {
                 const field = e.target.dataset.field;
-                if (field && (e.target.type === 'text' || e.target.tagName === 'TEXTAREA')) {
-                    // 使用防抖，避免频繁更新
-                    clearTimeout(window.editorInputTimeout);
-                    window.editorInputTimeout = setTimeout(() => {
-                        updateEditorItem(field, e.target.value);
-                    }, 300);
+                if (field) {
+                    if (e.target.type === 'range') {
+                        // 滑块实时更新
+                        const distanceSpan = document.getElementById(`editor-distance-value-${currentEditingItemId}`);
+                        if (distanceSpan && field === 'externalEmojiDistance') {
+                            distanceSpan.textContent = e.target.value + 'px';
+                        }
+                        updateEditorItem(field, parseInt(e.target.value));
+                    } else if (e.target.type === 'text' || e.target.tagName === 'TEXTAREA') {
+                        // 使用防抖，避免频繁更新
+                        clearTimeout(window.editorInputTimeout);
+                        window.editorInputTimeout = setTimeout(() => {
+                            updateEditorItem(field, e.target.value);
+                        }, 300);
+                    }
                 }
             });
         }
@@ -2443,6 +2572,76 @@
             if (item) {
                 item.emojis.push("");
                 renderEditorEmojis(item.id, item.emojis);
+            }
+        }
+
+        // 在编辑器中渲染框外emoji列表
+        function renderEditorExternalEmojis(itemId, externalEmojis) {
+            const container = document.getElementById(`editor-external-emojis-${itemId}`);
+            if (!container) return;
+            container.innerHTML = '';
+
+            externalEmojis.forEach((emoji, index) => {
+                const emojiDiv = document.createElement('div');
+                emojiDiv.style.display = 'flex';
+                emojiDiv.style.alignItems = 'center';
+                emojiDiv.style.marginBottom = '8px';
+                emojiDiv.style.gap = '5px';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = emoji;
+                input.placeholder = '输入emoji';
+                input.style.flex = '1';
+                input.style.padding = '8px';
+                input.style.border = '1px solid #ddd';
+                input.style.borderRadius = '6px';
+                input.dataset.emojiIndex = index;
+                input.addEventListener('change', function() {
+                    const item = items.find(i => i.id === itemId);
+                    if (item) {
+                        item.externalEmojis[index] = this.value;
+                        generateAllVersions();
+                    }
+                });
+
+                const pickBtn = document.createElement('button');
+                pickBtn.className = 'btn-pick-emoji';
+                pickBtn.textContent = '选择';
+                pickBtn.dataset.emojiIndex = index;
+                pickBtn.addEventListener('click', function() {
+                    openEmojiPickerInEditor('externalEmojis', index);
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn-remove-emoji';
+                removeBtn.textContent = '×';
+                removeBtn.addEventListener('click', function() {
+                    const item = items.find(i => i.id === itemId);
+                    if (item) {
+                        item.externalEmojis.splice(index, 1);
+                        renderEditorExternalEmojis(itemId, item.externalEmojis);
+                        generateAllVersions();
+                    }
+                });
+
+                emojiDiv.appendChild(input);
+                emojiDiv.appendChild(pickBtn);
+                emojiDiv.appendChild(removeBtn);
+                container.appendChild(emojiDiv);
+            });
+        }
+
+        // 在编辑器中添加框外emoji
+        function addExternalEmojiInEditor() {
+            if (!currentEditingItemId) return;
+            const item = items.find(i => i.id === currentEditingItemId);
+            if (item) {
+                if (!item.externalEmojis) {
+                    item.externalEmojis = [];
+                }
+                item.externalEmojis.push("");
+                renderEditorExternalEmojis(item.id, item.externalEmojis);
             }
         }
 
