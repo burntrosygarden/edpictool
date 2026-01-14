@@ -1063,6 +1063,30 @@
             '其他': ['⭐', '🌟', '💫', '✨', '⚡', '☄️', '💥', '🔥', '🌈', '☀️', '🌤️', '⛅', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '❄️', '☃️', '⛄', '🌨️', '💧', '💦', '☔', '☂️', '🌊', '🌫️']
         };
 
+        // 预设颜色方案
+        const colorPresets = [
+            { name: '经典蓝', bg: '#3B82F6', text: 'white' },
+            { name: '优雅紫', bg: '#8B5CF6', text: 'white' },
+            { name: '活力绿', bg: '#10B981', text: 'white' },
+            { name: '温暖橙', bg: '#F59E0B', text: 'white' },
+            { name: '热情红', bg: '#EF4444', text: 'white' },
+            { name: '深邃蓝', bg: '#1E40AF', text: 'white' },
+            { name: '薄荷绿', bg: '#34D399', text: 'white' },
+            { name: '樱花粉', bg: '#F472B6', text: 'white' },
+            { name: '石板灰', bg: '#64748B', text: 'white' },
+            { name: '琥珀黄', bg: '#FBBF24', text: 'black' }
+        ];
+
+        // 预设高亮颜色
+        const highlightPresets = [
+            { name: '经典黄', color: '#FFFF00' },
+            { name: '荧光绿', color: '#7FFF00' },
+            { name: '天蓝', color: '#87CEEB' },
+            { name: '浅粉', color: '#FFB6C1' },
+            { name: '薰衣草', color: '#E6E6FA' },
+            { name: '浅橙', color: '#FFD700' }
+        ];
+
         // 存储所有对比项配置
         let items = [];
 
@@ -1292,11 +1316,15 @@
                         </div>
                     ` : '';
 
+                    const strokeStyle = (item.strokeWidth && item.strokeWidth > 0)
+                        ? `-webkit-text-stroke: ${item.strokeWidth}px ${item.strokeColor || '#000000'};`
+                        : '';
+
                     itemsHTML += `
                         <div class="comparison-item" style="${positionStyle}">
                             <div class="text-box-container">
                                 ${externalEmojisHTML}
-                                <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white;">
+                                <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white; ${strokeStyle}">
                                     ${styledContent}
                                 </div>
                             </div>
@@ -1686,7 +1714,9 @@
                 boxStyle: "rounded",
                 externalEmojis: [],
                 externalEmojiPosition: "top",
-                externalEmojiDistance: 65
+                externalEmojiDistance: 65,
+                strokeWidth: 0,
+                strokeColor: "#000000"
             };
             items.push(newItem);
             renderConfig();
@@ -1797,8 +1827,18 @@
                                oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions();">
                     </div>
                     <div class="form-group">
-                        <label>颜色</label>
-                        <input type="color" value="${item.color}" 
+                        <label>颜色预设</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                            ${colorPresets.map(preset => `
+                                <button class="color-preset-btn"
+                                        style="background: ${preset.bg}; color: ${preset.text}; padding: 6px 12px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;"
+                                        onclick="updateItem(${item.id}, 'color', '${preset.bg}'); renderConfig(); generateAllVersions();">
+                                    ${preset.name}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <label>自定义颜色</label>
+                        <input type="color" value="${item.color}"
                                onchange="updateItem(${item.id}, 'color', this.value); generateAllVersions();">
                     </div>
                     ${item.displayStyle === 'icon' ? `
@@ -1833,9 +1873,14 @@
                                 <code>==文字==</code> - 黄色高亮<br>
                                 <code>&#96;文字&#96;</code> - 代码样式<br>
                                 <br>
+                                <strong>高亮预设颜色（快速使用）：</strong><br>
+                                ${highlightPresets.map(preset => `
+                                    <code>[highlight:${preset.color}]文字[/highlight]</code> - <span style="background: ${preset.color}; padding: 2px 6px; border-radius: 3px;">${preset.name}</span><br>
+                                `).join('')}
+                                <br>
                                 <strong>高级样式（向后兼容）：</strong><br>
                                 <code>[color:#ff0000]文字[/color]</code> - 自定义颜色<br>
-                                <code>[highlight:#ffff00]文字[/highlight]</code> - 自定义高亮色<br>
+                                <code>[highlight:#任意颜色]文字[/highlight]</code> - 自定义高亮色<br>
                                 <code>[style:color:#ff0000;background:#ffff00]文字[/style]</code> - 自定义CSS样式
                             </div>
                         </div>
@@ -1852,6 +1897,19 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label>字体描边宽度：<span id="stroke-value-${item.id}">${item.strokeWidth || 0}px</span></label>
+                            <input type="range" min="0" max="8" step="1" value="${item.strokeWidth || 0}"
+                                   style="width: 100%;"
+                                   oninput="updateItem(${item.id}, 'strokeWidth', parseInt(this.value)); document.getElementById('stroke-value-${item.id}').textContent = this.value + 'px'; generateAllVersions();">
+                        </div>
+                        ${(item.strokeWidth || 0) > 0 ? `
+                        <div class="form-group">
+                            <label>描边颜色</label>
+                            <input type="color" value="${item.strokeColor || '#000000'}"
+                                   onchange="updateItem(${item.id}, 'strokeColor', this.value); generateAllVersions();">
+                        </div>
+                        ` : ''}
                         <div class="form-group">
                             <label>框外Emoji</label>
                             <div class="emoji-input-group" id="external-emojis-${item.id}"></div>
@@ -2195,6 +2253,10 @@
                         </div>
                     ` : '';
 
+                    const strokeStyle = (item.strokeWidth && item.strokeWidth > 0)
+                        ? `-webkit-text-stroke: ${item.strokeWidth}px ${item.strokeColor || '#000000'};`
+                        : '';
+
                     itemDiv.innerHTML = `
                         <div class="item-actions">
                             <button class="item-action-btn edit" onclick="openItemEditor(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
@@ -2202,7 +2264,7 @@
                         </div>
                         <div class="text-box-container">
                             ${externalEmojisHTML}
-                            <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white;">
+                            <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white; ${strokeStyle}">
                                 ${styledContent}
                             </div>
                         </div>
@@ -2363,7 +2425,17 @@
                            data-field="subtitle">
                 </div>
                 <div class="form-group">
-                    <label>颜色</label>
+                    <label>颜色预设</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                        ${colorPresets.map(preset => `
+                            <button class="color-preset-btn"
+                                    style="background: ${preset.bg}; color: ${preset.text}; padding: 6px 12px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;"
+                                    data-action="updateEditorItem" data-field="color" data-value="${preset.bg}">
+                                ${preset.name}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <label>自定义颜色</label>
                     <input type="color" value="${item.color}"
                            data-field="color">
                 </div>
@@ -2409,6 +2481,19 @@
                             </button>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>字体描边宽度：<span id="editor-stroke-value-${item.id}">${item.strokeWidth || 0}px</span></label>
+                        <input type="range" min="0" max="8" step="1" value="${item.strokeWidth || 0}"
+                               style="width: 100%;"
+                               data-field="strokeWidth">
+                    </div>
+                    ${(item.strokeWidth || 0) > 0 ? `
+                    <div class="form-group">
+                        <label>描边颜色</label>
+                        <input type="color" value="${item.strokeColor || '#000000'}"
+                               data-field="strokeColor">
+                    </div>
+                    ` : ''}
                     <div class="form-group">
                         <label>框外Emoji</label>
                         <div id="editor-external-emojis-${item.id}"></div>
@@ -2518,6 +2603,10 @@
                         if (distanceSpan && field === 'externalEmojiDistance') {
                             distanceSpan.textContent = e.target.value + 'px';
                         }
+                        const strokeSpan = document.getElementById(`editor-stroke-value-${currentEditingItemId}`);
+                        if (strokeSpan && field === 'strokeWidth') {
+                            strokeSpan.textContent = e.target.value + 'px';
+                        }
                         updateEditorItem(field, parseInt(e.target.value));
                     } else if (e.target.type === 'text' || e.target.tagName === 'TEXTAREA') {
                         // 使用防抖，避免频繁更新
@@ -2543,8 +2632,8 @@
 
             updateItem(currentEditingItemId, field, value);
 
-            // 如果是切换显示样式，重新渲染编辑器
-            if (field === 'displayStyle') {
+            // 如果是切换显示样式或描边宽度，重新渲染编辑器
+            if (field === 'displayStyle' || field === 'strokeWidth') {
                 openItemEditor(currentEditingItemId);
             } else {
                 generateAllVersions();
