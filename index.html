@@ -523,6 +523,149 @@
             overflow: auto;
         }
 
+        /* 画布工具栏 */
+        .canvas-toolbar {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+        }
+
+        .canvas-toolbar .btn {
+            background: white;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .canvas-toolbar .btn:hover {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* 元素操作按钮 */
+        .item-actions {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            display: none;
+            gap: 4px;
+            z-index: 20;
+        }
+
+        .comparison-item:hover .item-actions {
+            display: flex;
+        }
+
+        .item-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .item-action-btn.edit {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .item-action-btn.edit:hover {
+            background: #2563eb;
+            transform: scale(1.1);
+        }
+
+        .item-action-btn.delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .item-action-btn.delete:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        /* 浮动编辑面板 */
+        .floating-editor {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .floating-editor.show {
+            display: block;
+        }
+
+        .floating-editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .floating-editor-header h3 {
+            font-size: 18px;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .btn-close-editor {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-close-editor:hover {
+            background: #dc2626;
+        }
+
+        .floating-editor-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+        }
+
+        .floating-editor-overlay.show {
+            display: block;
+        }
+
         .version-controls {
             display: flex;
             gap: 10px;
@@ -620,6 +763,7 @@
             position: absolute;
             min-width: 200px;
             max-width: 350px;
+            transition: all 0.2s;
         }
 
         .comparison-item.draggable {
@@ -629,6 +773,10 @@
         .comparison-item.dragging {
             opacity: 0.7;
             z-index: 1000;
+        }
+
+        .comparison-item:hover {
+            transform: scale(1.02);
         }
 
         /* 图标样式 */
@@ -827,11 +975,14 @@
 
         <!-- 预览面板 -->
         <div class="preview-panel" style="left: 45px; top: 34px;">
+            <div class="canvas-toolbar">
+                <button class="btn" onclick="addItemFromCanvas()">➕ 添加元素</button>
+            </div>
             <div class="version-controls">
                 <div class="version-buttons" id="versionButtons"></div>
             </div>
             <div class="comparison-container" id="previewContainer">
-                <div class="empty-state">添加对比项开始配置</div>
+                <div class="empty-state">点击上方"➕ 添加元素"开始创建</div>
             </div>
         </div>
     </div>
@@ -846,6 +997,18 @@
             <div class="emoji-categories" id="emojiCategories"></div>
             <div class="emoji-grid" id="emojiGrid"></div>
         </div>
+    </div>
+
+    <!-- 浮动编辑器遮罩 -->
+    <div class="floating-editor-overlay" id="floatingEditorOverlay" onclick="closeFloatingEditor()"></div>
+
+    <!-- 浮动编辑器 -->
+    <div class="floating-editor" id="floatingEditor">
+        <div class="floating-editor-header">
+            <h3>编辑元素</h3>
+            <button class="btn-close-editor" onclick="closeFloatingEditor()">关闭</button>
+        </div>
+        <div id="floatingEditorContent"></div>
     </div>
 
     <!-- 隐藏的文件输入 -->
@@ -1301,7 +1464,17 @@
                 } else if (item.emojis[currentEmojiPicker.emojiIndex] !== undefined) {
                     item.emojis[currentEmojiPicker.emojiIndex] = emoji;
                 }
+
+                // 更新配置面板
                 renderConfig();
+
+                // 如果是从编辑器中选择的，也更新编辑器
+                if (currentEditingItemId === currentEmojiPicker.itemId) {
+                    if (item.displayStyle === 'icon') {
+                        renderEditorEmojis(item.id, item.emojis);
+                    }
+                }
+
                 generateAllVersions();
             }
             closeEmojiPicker();
@@ -1855,6 +2028,10 @@
                     const emoji = currentVersionData.combination[itemIndex] || '';
                     const hasText = item.title || item.subtitle;
                     itemDiv.innerHTML = `
+                        <div class="item-actions">
+                            <button class="item-action-btn edit" onclick="openItemEditor(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
+                            <button class="item-action-btn delete" onclick="deleteItemFromCanvas(${item.id}); event.stopPropagation();" title="删除">🗑️</button>
+                        </div>
                         <div class="icon-container ${item.shape}" style="background-color: ${item.color}">
                             ${emoji}
                         </div>
@@ -1868,6 +2045,10 @@
                     const styledContent = parseTextStyles(item.boxContent || '文本框内容');
                     const hasText = item.title || item.subtitle;
                     itemDiv.innerHTML = `
+                        <div class="item-actions">
+                            <button class="item-action-btn edit" onclick="openItemEditor(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
+                            <button class="item-action-btn delete" onclick="deleteItemFromCanvas(${item.id}); event.stopPropagation();" title="删除">🗑️</button>
+                        </div>
                         <div class="text-box-container">
                             ${externalEmoji ? `<div class="external-emoji ${item.externalEmojiPosition}">${externalEmoji}</div>` : ''}
                             <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white;">
@@ -1890,18 +2071,23 @@
 
         // 开始拖拽
         function startDrag(e, itemIndex) {
+            // 如果点击的是按钮，不触发拖拽
+            if (e.target.closest('.item-action-btn') || e.target.closest('button')) {
+                return;
+            }
+
             e.preventDefault();
             const item = e.currentTarget;
             const rect = item.getBoundingClientRect();
             const containerRect = item.parentElement.getBoundingClientRect();
-            
+
             dragOffset.x = e.clientX - rect.left;
             dragOffset.y = e.clientY - rect.top;
             draggedPreviewItem = itemIndex;
-            
+
             item.classList.add('dragging');
             item.style.zIndex = '1000';
-            
+
             document.addEventListener('mousemove', handleDragMove);
             document.addEventListener('mouseup', stopDrag);
         }
@@ -1969,6 +2155,250 @@
                 closeEmojiPicker();
             }
         });
+
+        // ========== 画布操作功能 ==========
+
+        // 从画布添加元素
+        function addItemFromCanvas() {
+            addItem();
+            // 滚动到配置面板底部
+            const configPanel = document.querySelector('.config-panel');
+            if (configPanel) {
+                configPanel.scrollTop = configPanel.scrollHeight;
+            }
+        }
+
+        // 从画布删除元素
+        function deleteItemFromCanvas(itemId) {
+            if (confirm('确定要删除这个元素吗？')) {
+                deleteItem(itemId);
+            }
+        }
+
+        // 当前编辑的元素ID
+        let currentEditingItemId = null;
+
+        // 打开元素编辑器
+        function openItemEditor(itemId) {
+            currentEditingItemId = itemId;
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const editorContent = document.getElementById('floatingEditorContent');
+
+            // 渲染编辑器内容
+            editorContent.innerHTML = `
+                <div class="form-group">
+                    <label>显示样式</label>
+                    <div class="button-group">
+                        <button class="option-btn ${item.displayStyle === 'icon' ? 'active' : ''}"
+                                onclick="updateEditorItem('displayStyle', 'icon')">
+                            🎨 图标样式
+                        </button>
+                        <button class="option-btn ${item.displayStyle === 'textbox' ? 'active' : ''}"
+                                onclick="updateEditorItem('displayStyle', 'textbox')">
+                            💬 文本框样式
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>标题（可选）</label>
+                    <input type="text" value="${item.title}" placeholder="留空则不显示标题"
+                           onchange="updateEditorItem('title', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>副标题（可选）</label>
+                    <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
+                           onchange="updateEditorItem('subtitle', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>颜色</label>
+                    <input type="color" value="${item.color}"
+                           onchange="updateEditorItem('color', this.value)">
+                </div>
+                ${item.displayStyle === 'icon' ? `
+                    <div class="form-group">
+                        <label>形状</label>
+                        <div class="button-group">
+                            <button class="option-btn ${item.shape === 'circle' ? 'active' : ''}"
+                                    onclick="updateEditorItem('shape', 'circle')">
+                                ⭕ 圆形
+                            </button>
+                            <button class="option-btn ${item.shape === 'square' ? 'active' : ''}"
+                                    onclick="updateEditorItem('shape', 'square')">
+                                ◻️ 方形
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Emoji</label>
+                        <div id="editor-emojis-${item.id}"></div>
+                        <button class="btn-add-emoji" onclick="addEmojiInEditor()">+ 添加Emoji</button>
+                    </div>
+                ` : `
+                    <div class="form-group">
+                        <label>文本框内容</label>
+                        <textarea placeholder="输入文字和emoji"
+                                  onchange="updateEditorItem('boxContent', this.value)"
+                                  style="min-height: 80px;">${item.boxContent || ''}</textarea>
+                        <div class="style-help">
+                            支持Markdown：<code>**粗体**</code> <code>*斜体*</code> <code>~~删除线~~</code> <code>==高亮==</code>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>文本框样式</label>
+                        <div class="button-group">
+                            <button class="option-btn ${item.boxStyle === 'rounded' ? 'active' : ''}"
+                                    onclick="updateEditorItem('boxStyle', 'rounded')">
+                                ▢ 圆角矩形
+                            </button>
+                            <button class="option-btn ${item.boxStyle === 'rectangle' ? 'active' : ''}"
+                                    onclick="updateEditorItem('boxStyle', 'rectangle')">
+                                ▭ 长方形
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>框外Emoji</label>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <input type="text" value="${item.externalEmoji || ''}" placeholder="选择emoji"
+                                   style="flex: 1; font-size: 24px; text-align: center;"
+                                   onchange="updateEditorItem('externalEmoji', this.value)">
+                            <button class="btn-pick-emoji" onclick="openEmojiPickerInEditor('externalEmoji')">选择</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>框外Emoji位置</label>
+                        <div class="button-group">
+                            <button class="option-btn ${item.externalEmojiPosition === 'top' ? 'active' : ''}"
+                                    onclick="updateEditorItem('externalEmojiPosition', 'top')"
+                                    style="flex: 0 0 calc(50% - 4px);">
+                                ⬆️ 上方
+                            </button>
+                            <button class="option-btn ${item.externalEmojiPosition === 'bottom' ? 'active' : ''}"
+                                    onclick="updateEditorItem('externalEmojiPosition', 'bottom')"
+                                    style="flex: 0 0 calc(50% - 4px);">
+                                ⬇️ 下方
+                            </button>
+                            <button class="option-btn ${item.externalEmojiPosition === 'left' ? 'active' : ''}"
+                                    onclick="updateEditorItem('externalEmojiPosition', 'left')"
+                                    style="flex: 0 0 calc(50% - 4px);">
+                                ⬅️ 左侧
+                            </button>
+                            <button class="option-btn ${item.externalEmojiPosition === 'right' ? 'active' : ''}"
+                                    onclick="updateEditorItem('externalEmojiPosition', 'right')"
+                                    style="flex: 0 0 calc(50% - 4px);">
+                                ➡️ 右侧
+                            </button>
+                        </div>
+                    </div>
+                `}
+            `;
+
+            // 如果是图标样式，渲染emoji列表
+            if (item.displayStyle === 'icon') {
+                renderEditorEmojis(item.id, item.emojis);
+            }
+
+            // 显示编辑器
+            document.getElementById('floatingEditorOverlay').classList.add('show');
+            document.getElementById('floatingEditor').classList.add('show');
+        }
+
+        // 关闭浮动编辑器
+        function closeFloatingEditor() {
+            document.getElementById('floatingEditorOverlay').classList.remove('show');
+            document.getElementById('floatingEditor').classList.remove('show');
+            currentEditingItemId = null;
+        }
+
+        // 更新编辑器中的元素属性
+        function updateEditorItem(field, value) {
+            if (!currentEditingItemId) return;
+
+            updateItem(currentEditingItemId, field, value);
+
+            // 如果是切换显示样式，重新渲染编辑器
+            if (field === 'displayStyle') {
+                openItemEditor(currentEditingItemId);
+            } else {
+                generateAllVersions();
+            }
+        }
+
+        // 在编辑器中渲染emoji列表
+        function renderEditorEmojis(itemId, emojis) {
+            const container = document.getElementById(`editor-emojis-${itemId}`);
+            if (!container) return;
+            container.innerHTML = '';
+
+            emojis.forEach((emoji, index) => {
+                const emojiDiv = document.createElement('div');
+                emojiDiv.style.display = 'flex';
+                emojiDiv.style.alignItems = 'center';
+                emojiDiv.style.marginBottom = '8px';
+                emojiDiv.style.gap = '5px';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = emoji;
+                input.placeholder = '输入emoji';
+                input.style.flex = '1';
+                input.style.padding = '8px';
+                input.style.border = '1px solid #ddd';
+                input.style.borderRadius = '6px';
+                input.onchange = () => {
+                    const item = items.find(i => i.id === itemId);
+                    if (item) {
+                        item.emojis[index] = input.value;
+                        generateAllVersions();
+                    }
+                };
+
+                const pickBtn = document.createElement('button');
+                pickBtn.className = 'btn-pick-emoji';
+                pickBtn.textContent = '选择';
+                pickBtn.onclick = () => openEmojiPickerInEditor('emoji', index);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn-remove-emoji';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => {
+                    const item = items.find(i => i.id === itemId);
+                    if (item) {
+                        item.emojis.splice(index, 1);
+                        if (item.emojis.length === 0) {
+                            item.emojis.push("");
+                        }
+                        renderEditorEmojis(itemId, item.emojis);
+                        generateAllVersions();
+                    }
+                };
+
+                emojiDiv.appendChild(input);
+                emojiDiv.appendChild(pickBtn);
+                emojiDiv.appendChild(removeBtn);
+                container.appendChild(emojiDiv);
+            });
+        }
+
+        // 在编辑器中添加emoji
+        function addEmojiInEditor() {
+            if (!currentEditingItemId) return;
+            const item = items.find(i => i.id === currentEditingItemId);
+            if (item) {
+                item.emojis.push("");
+                renderEditorEmojis(item.id, item.emojis);
+            }
+        }
+
+        // 在编辑器中打开emoji选择器
+        function openEmojiPickerInEditor(field, emojiIndex = 0) {
+            currentEmojiPicker.itemId = currentEditingItemId;
+            currentEmojiPicker.emojiIndex = emojiIndex;
+            currentEmojiPicker.field = field;
+            document.getElementById('emojiPickerModal').classList.add('show');
+        }
 
         // 页面加载时初始化
         init();
