@@ -1763,12 +1763,14 @@
                 }
 
                 const combinations = getCombinations(itemEmojiLists);
-                
+
                 // 默认只生成一个版本（使用第一个emoji组合）
                 if (combinations.length > 0) {
+                    // 保留现有的positions信息
+                    const existingPositions = allVersions[0]?.positions || {};
                     allVersions = [{
                         combination: combinations[0],
-                        positions: {},
+                        positions: existingPositions,
                         name: `版本 1`
                     }];
                 } else {
