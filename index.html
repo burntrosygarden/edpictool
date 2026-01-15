@@ -3289,12 +3289,7 @@
 
         // 添加装饰贴纸到画布
         function addDecorativeStickerToCanvas(itemId) {
-            currentEmojiPicker = {
-                itemId: itemId,
-                emojiIndex: null,
-                field: 'decorativeSticker'
-            };
-            openEmojiPickerModal();
+            openEmojiPicker(itemId, null, 'decorativeSticker');
         }
 
         // 移除装饰emoji
