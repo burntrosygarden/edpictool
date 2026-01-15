@@ -682,6 +682,60 @@
             transform: scale(1.1);
         }
 
+        .item-action-btn.add-sticker {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .item-action-btn.add-sticker:hover {
+            background: #7c3aed;
+            transform: scale(1.1);
+        }
+
+        /* 装饰emoji样式 */
+        .decorative-emoji-item {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            transition: transform 0.1s;
+            z-index: 10;
+        }
+
+        .decorative-emoji-item:hover {
+            transform: scale(1.1);
+        }
+
+        .decorative-emoji-item.dragging {
+            opacity: 0.7;
+            z-index: 100;
+        }
+
+        .decorative-emoji-delete {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ef4444;
+            color: white;
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .decorative-emoji-item:hover .decorative-emoji-delete {
+            display: flex;
+        }
+
+        .decorative-emoji-delete:hover {
+            background: #dc2626;
+        }
+
         /* 浮动编辑面板 */
         .floating-editor {
             display: none;
@@ -1863,6 +1917,19 @@
                     if (item.externalEmojis[currentEmojiPicker.emojiIndex] !== undefined) {
                         item.externalEmojis[currentEmojiPicker.emojiIndex] = emoji;
                     }
+                } else if (currentEmojiPicker.field === 'decorativeSticker') {
+                    // 从画布添加装饰emoji贴纸
+                    if (!item.decorativeEmojis) {
+                        item.decorativeEmojis = [];
+                    }
+                    // 在文本框中心位置添加新的装饰emoji
+                    item.decorativeEmojis.push({
+                        emoji: emoji,
+                        x: 0,  // 相对于文本框容器的偏移
+                        y: 0,
+                        fontSize: 32
+                    });
+                    saveHistory();
                 } else if (currentEmojiPicker.field === 'decorativeEmojis' || currentEmojiPicker.field === 'editor-decorativeEmojis') {
                     if (!item.decorativeEmojis) {
                         item.decorativeEmojis = [];
@@ -1874,20 +1941,10 @@
                     item.emojis[currentEmojiPicker.emojiIndex] = emoji;
                 }
 
-                // 更新配置面板
-                renderConfig();
-
-                // 如果是从编辑器中选择的，也更新编辑器
-                if (currentEditingItemId === currentEmojiPicker.itemId) {
-                    if (item.displayStyle === 'icon') {
-                        renderEditorEmojis(item.id, item.emojis);
-                    } else {
-                        renderEditorExternalEmojis(item.id, item.externalEmojis || []);
-                        renderEditorDecorativeEmojis(item.id, item.decorativeEmojis || []);
-                    }
-                }
-
-                generateAllVersions();
+                // 更新UI
+                renderElementList();
+                renderEditPanel(selectedItemId);
+                updatePreview();
             }
             closeEmojiPicker();
         }
@@ -3168,15 +3225,15 @@
 
                     itemDiv.innerHTML = `
                         <div class="item-actions">
-                            <button class="item-action-btn edit" onclick="openItemEditor(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
+                            <button class="item-action-btn add-sticker" onclick="addDecorativeStickerToCanvas(${item.id}); event.stopPropagation();" title="添加贴纸">➕</button>
+                            <button class="item-action-btn edit" onclick="selectItem(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
                             <button class="item-action-btn delete" onclick="deleteItemFromCanvas(${item.id}); event.stopPropagation();" title="删除">🗑️</button>
                         </div>
-                        <div class="text-box-container" id="text-box-container-${item.id}">
+                        <div class="text-box-container" id="text-box-container-${item.id}" style="position: relative;">
                             ${externalEmojisHTML}
                             <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white;">
                                 ${styledContent}
                             </div>
-                            ${decorativeEmojisHTML}
                         </div>
                         ${hasText ? `<div class="text-content">
                             ${item.title ? `<div class="title">${item.title}</div>` : ''}
@@ -3190,14 +3247,66 @@
 
                 previewDiv.appendChild(itemDiv);
 
-                // 为装饰emoji添加拖拽事件
-                if (item.displayStyle === 'textbox') {
-                    const decoEmojis = itemDiv.querySelectorAll('.decorative-emoji');
-                    decoEmojis.forEach(decoEmoji => {
-                        decoEmoji.addEventListener('mousedown', (e) => startDecorativeEmojiDrag(e, item.id, parseInt(decoEmoji.dataset.decoIndex)));
-                    });
+                // 渲染装饰emoji
+                if (item.displayStyle === 'textbox' && item.decorativeEmojis && item.decorativeEmojis.length > 0) {
+                    const container = itemDiv.querySelector('.text-box-container');
+                    if (container) {
+                        renderCanvasDecorativeEmojis(item.id, item.decorativeEmojis, container);
+                    }
                 }
             });
+        }
+
+        // 在画布上渲染装饰emoji
+        function renderCanvasDecorativeEmojis(itemId, decorativeEmojis, container) {
+            // 清除现有的装饰emoji
+            const existing = container.querySelectorAll('.decorative-emoji-item');
+            existing.forEach(el => el.remove());
+
+            decorativeEmojis.forEach((deco, decoIndex) => {
+                const emojiDiv = document.createElement('div');
+                emojiDiv.className = 'decorative-emoji-item';
+                emojiDiv.dataset.itemId = itemId;
+                emojiDiv.dataset.decoIndex = decoIndex;
+                emojiDiv.style.left = (deco.x || 0) + 'px';
+                emojiDiv.style.top = (deco.y || 0) + 'px';
+                emojiDiv.style.fontSize = (deco.fontSize || 32) + 'px';
+                emojiDiv.innerHTML = `
+                    ${deco.emoji}
+                    <button class="decorative-emoji-delete" onclick="removeDecorativeEmoji(${itemId}, ${decoIndex}); event.stopPropagation();">×</button>
+                `;
+
+                // 添加拖拽事件
+                emojiDiv.addEventListener('mousedown', (e) => {
+                    if (!e.target.closest('.decorative-emoji-delete')) {
+                        startDecorativeEmojiDrag(e, itemId, decoIndex);
+                    }
+                });
+
+                container.appendChild(emojiDiv);
+            });
+        }
+
+        // 添加装饰贴纸到画布
+        function addDecorativeStickerToCanvas(itemId) {
+            currentEmojiPicker = {
+                itemId: itemId,
+                emojiIndex: null,
+                field: 'decorativeSticker'
+            };
+            openEmojiPickerModal();
+        }
+
+        // 移除装饰emoji
+        function removeDecorativeEmoji(itemId, decoIndex) {
+            const item = items.find(i => i.id === itemId);
+            if (item && item.decorativeEmojis) {
+                item.decorativeEmojis.splice(decoIndex, 1);
+                saveHistory();
+                updatePreview();
+                renderElementList();
+                renderEditPanel(selectedItemId);
+            }
         }
 
         // 开始拖拽
@@ -3288,12 +3397,15 @@
             e.stopPropagation();
             e.preventDefault();
 
+            const item = items.find(i => i.id === itemId);
+            if (!item || !item.decorativeEmojis[decoIndex]) return;
+
             draggedDecoEmoji = { itemId, decoIndex };
 
-            const container = document.getElementById(`text-box-container-${itemId}`);
-            if (!container) return;
+            const emojiElement = e.currentTarget;
+            emojiElement.classList.add('dragging');
 
-            const rect = container.getBoundingClientRect();
+            // 记录初始鼠标位置
             decoEmojiDragOffset.x = e.clientX;
             decoEmojiDragOffset.y = e.clientY;
 
@@ -3309,37 +3421,46 @@
             const item = items.find(i => i.id === itemId);
             if (!item || !item.decorativeEmojis[decoIndex]) return;
 
-            const container = document.getElementById(`text-box-container-${itemId}`);
-            if (!container) return;
-
-            const rect = container.getBoundingClientRect();
+            // 计算移动距离
             const deltaX = e.clientX - decoEmojiDragOffset.x;
             const deltaY = e.clientY - decoEmojiDragOffset.y;
 
-            // 计算新的百分比位置
-            const deltaXPercent = (deltaX / rect.width) * 100;
-            const deltaYPercent = (deltaY / rect.height) * 100;
+            // 更新位置（像素）
+            let newX = (item.decorativeEmojis[decoIndex].x || 0) + deltaX;
+            let newY = (item.decorativeEmojis[decoIndex].y || 0) + deltaY;
 
-            let newX = item.decorativeEmojis[decoIndex].x + deltaXPercent;
-            let newY = item.decorativeEmojis[decoIndex].y + deltaYPercent;
-
-            // 限制在0-100%范围内
-            newX = Math.max(0, Math.min(100, newX));
-            newY = Math.max(0, Math.min(100, newY));
+            // 限制移动范围（相对于文本框容器，可以移动到±200px范围内）
+            newX = Math.max(-200, Math.min(200, newX));
+            newY = Math.max(-200, Math.min(200, newY));
 
             item.decorativeEmojis[decoIndex].x = newX;
             item.decorativeEmojis[decoIndex].y = newY;
 
+            // 更新起始位置
             decoEmojiDragOffset.x = e.clientX;
             decoEmojiDragOffset.y = e.clientY;
 
-            updatePreview();
+            // 实时更新位置
+            const emojiElement = document.querySelector(`.decorative-emoji-item[data-item-id="${itemId}"][data-deco-index="${decoIndex}"]`);
+            if (emojiElement) {
+                emojiElement.style.left = newX + 'px';
+                emojiElement.style.top = newY + 'px';
+            }
         }
 
         // 停止装饰emoji拖拽
         function stopDecoEmojiDrag() {
             if (draggedDecoEmoji) {
-                saveConfig();
+                // 移除dragging样式
+                const { itemId, decoIndex } = draggedDecoEmoji;
+                const emojiElement = document.querySelector(`.decorative-emoji-item[data-item-id="${itemId}"][data-deco-index="${decoIndex}"]`);
+                if (emojiElement) {
+                    emojiElement.classList.remove('dragging');
+                }
+
+                saveHistory();
+                renderElementList();
+                renderEditPanel(selectedItemId);
             }
             draggedDecoEmoji = null;
             document.removeEventListener('mousemove', handleDecoEmojiDragMove);
