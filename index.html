@@ -79,20 +79,144 @@
 
         .app-container {
             display: flex;
-            gap: 20px;
-            max-width: 1600px;
+            gap: 15px;
+            max-width: 100%;
             margin: 0 auto;
+            height: calc(100vh - 120px);
         }
 
-        /* 配置面板 */
-        .config-panel {
-            flex: 0 0 480px;
+        /* 左侧元素列表面板 */
+        .element-list-panel {
+            flex: 0 0 280px;
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .element-list-panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .element-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        /* 中间画布面板 */
+        .canvas-panel {
+            flex: 1;
             background: white;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            max-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 右侧编辑面板 */
+        .edit-panel {
+            flex: 0 0 380px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
+        }
+
+        .edit-panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .edit-panel-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .edit-panel-empty-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        /* 元素列表项 */
+        .element-list-item {
+            background: #f9fafb;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .element-list-item:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .element-list-item.selected {
+            border-color: #3b82f6;
+            background: #dbeafe;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .element-list-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .element-list-item-icon {
+            font-size: 20px;
+        }
+
+        .element-list-item-title {
+            flex: 1;
+            font-weight: 500;
+            font-size: 14px;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .element-list-item-preview {
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .element-list-item-drag {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #999;
+            cursor: move;
+            font-size: 16px;
+        }
+
+        /* 配置面板（保留兼容性） */
+        .config-panel {
+            display: none; /* 旧版配置面板隐藏 */
         }
 
         .config-panel h2 {
@@ -558,6 +682,136 @@
             transform: scale(1.1);
         }
 
+        .item-action-btn.add-sticker {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .item-action-btn.add-sticker:hover {
+            background: #7c3aed;
+            transform: scale(1.1);
+        }
+
+        /* 装饰emoji样式 */
+        .decorative-emoji-item {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            z-index: 10;
+            display: inline-block;
+        }
+
+        .decorative-emoji-item.selected {
+            outline: 2px dashed #3b82f6;
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+
+        .decorative-emoji-item.dragging {
+            opacity: 0.7;
+            z-index: 100;
+        }
+
+        .decorative-emoji-delete {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ef4444;
+            color: white;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        .decorative-emoji-item.selected .decorative-emoji-delete {
+            display: flex;
+        }
+
+        .decorative-emoji-delete:hover {
+            background: #dc2626;
+        }
+
+        /* 调整手柄样式 */
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            display: none;
+            z-index: 11;
+        }
+
+        .decorative-emoji-item.selected .resize-handle {
+            display: block;
+        }
+
+        .resize-handle.se {
+            bottom: -6px;
+            right: -6px;
+            cursor: nwse-resize;
+        }
+
+        .resize-handle:hover {
+            background: #3b82f6;
+            transform: scale(1.2);
+        }
+
+        /* 文本框选中样式和调整手柄 */
+        .text-box-container.selected {
+            outline: 2px solid #3b82f6;
+            outline-offset: 4px;
+            border-radius: 8px;
+        }
+
+        .text-box-resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 2px;
+            display: none;
+            z-index: 20;
+        }
+
+        .text-box-container.selected .text-box-resize-handle {
+            display: block;
+        }
+
+        .text-box-resize-handle.e {
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: ew-resize;
+        }
+
+        .text-box-resize-handle.s {
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: ns-resize;
+        }
+
+        .text-box-resize-handle.se {
+            bottom: -5px;
+            right: -5px;
+            cursor: nwse-resize;
+        }
+
+        .text-box-resize-handle:hover {
+            background: #3b82f6;
+        }
+
         /* 浮动编辑面板 */
         .floating-editor {
             display: none;
@@ -732,6 +986,12 @@
         .comparison-item.dragging {
             opacity: 0.7;
             z-index: 1000;
+        }
+
+        .comparison-item.selected {
+            outline: 3px solid #3b82f6;
+            outline-offset: 3px;
+            border-radius: 8px;
         }
 
         .comparison-item:hover {
@@ -931,12 +1191,185 @@
                 font-size: 18px;
             }
         }
+
+        /* 输入框清除按钮样式 */
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input,
+        .input-wrapper textarea {
+            flex: 1;
+            padding-right: 35px !important;
+        }
+
+        .btn-clear-input {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .input-wrapper input:not(:placeholder-shown) + .btn-clear-input,
+        .input-wrapper textarea:not(:placeholder-shown) + .btn-clear-input {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .btn-clear-input:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        /* 折叠区域样式 */
+        .collapsible-section {
+            margin-bottom: 15px;
+        }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .collapsible-header:hover {
+            background: #f3f4f6;
+        }
+
+        .collapsible-header-title {
+            font-weight: 500;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .collapsible-toggle {
+            font-size: 12px;
+            color: #666;
+            transition: transform 0.2s;
+        }
+
+        .collapsible-section.collapsed .collapsible-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s;
+            opacity: 1;
+            padding-top: 12px;
+        }
+
+        .collapsible-section.collapsed .collapsible-content {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+        }
+
+        /* 对齐线样式 */
+        .alignment-guide {
+            position: absolute;
+            background: #3b82f6;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .alignment-guide.vertical {
+            width: 1px;
+            height: 100%;
+            top: 0;
+        }
+
+        .alignment-guide.horizontal {
+            height: 1px;
+            width: 100%;
+            left: 0;
+        }
+
+        /* 复制按钮样式 */
+        .btn-duplicate {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .btn-duplicate:hover {
+            background: #059669;
+        }
+
+        /* 历史记录按钮样式 */
+        .btn-history {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-history:hover {
+            background: #4b5563;
+        }
+
+        .btn-history:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* 自动排版按钮样式 */
+        .btn-auto-layout {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-auto-layout:hover {
+            background: #7c3aed;
+        }
     </style>
 </head>
 <body>
     <div class="app-header">
         <h1>📚 教学视觉对比图生成器</h1>
         <div class="header-actions">
+            <button class="btn btn-history" id="undoBtn" onclick="undo()" disabled>↶ 撤销</button>
+            <button class="btn btn-history" id="redoBtn" onclick="redo()" disabled>↷ 重做</button>
+            <button class="btn btn-auto-layout" onclick="autoLayout()">✨ 一键排版</button>
             <button class="btn btn-success" onclick="saveConfig()">💾 保存配置</button>
             <button class="btn btn-secondary" onclick="loadConfig()">📂 加载配置</button>
             <button class="btn btn-primary" onclick="exportHTML()">📄 导出HTML</button>
@@ -945,30 +1378,42 @@
     </div>
 
     <div class="app-container">
-        <!-- 配置面板 -->
-        <div class="config-panel">
-            <h2>配置对比项</h2>
-            
-            <div class="config-name-group">
-                <label>配置名称</label>
-                <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
-                       value="" oninput="updateConfigName()">
+        <!-- 左侧：元素列表 -->
+        <div class="element-list-panel">
+            <h2>元素列表</h2>
+            <div class="element-list" id="elementList">
+                <!-- 元素列表项将通过JS生成 -->
             </div>
-
-            <div id="itemsConfig"></div>
-            <button class="btn-add-item" onclick="addItem()">+ 添加对比项</button>
+            <button class="btn-add-item" onclick="addItem()">+ 添加元素</button>
         </div>
 
-        <!-- 预览面板 -->
-        <div class="preview-panel" style="left: 45px; top: 34px;">
-            <div class="canvas-toolbar">
-                <button class="btn" onclick="addItemFromCanvas()">➕ 添加元素</button>
+        <!-- 中间：画布区域 -->
+        <div class="canvas-panel">
+            <div class="config-name-group" style="margin-bottom: 15px;">
+                <label>配置名称</label>
+                <div class="input-wrapper">
+                    <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
+                           value="" oninput="updateConfigName()">
+                    <button class="btn-clear-input" type="button" onclick="document.getElementById('configName').value = ''; updateConfigName();">×</button>
+                </div>
             </div>
-            <div class="version-controls">
+
+            <div class="version-controls" style="margin-bottom: 15px;">
                 <div class="version-buttons" id="versionButtons"></div>
             </div>
-            <div class="comparison-container" id="previewContainer">
-                <div class="empty-state">点击上方"➕ 添加元素"开始创建</div>
+
+            <div class="comparison-container" id="previewContainer" style="flex: 1; position: relative; overflow: auto;">
+                <div class="empty-state">点击左侧"+ 添加元素"开始创建</div>
+            </div>
+        </div>
+
+        <!-- 右侧：编辑面板 -->
+        <div class="edit-panel">
+            <div id="editPanelContent">
+                <div class="edit-panel-empty">
+                    <div class="edit-panel-empty-icon">✏️</div>
+                    <div>选择一个元素开始编辑</div>
+                </div>
             </div>
         </div>
     </div>
@@ -1069,6 +1514,25 @@
             field: null
         };
 
+        // 历史记录管理
+        let history = [];
+        let historyIndex = -1;
+        let isRestoringHistory = false;
+
+        // 对齐线相关
+        let alignmentThreshold = 5; // 对齐阈值（像素）
+        let enableAlignmentSnap = false; // 是否启用自动吸附（默认关闭，只显示对齐线）
+
+        // 选中的元素ID
+        let selectedItemId = null;
+
+        // 选中的装饰emoji
+        let selectedDecorativeEmoji = null; // { itemId, decoIndex }
+
+        // 调整大小相关
+        let resizingEmoji = null; // { itemId, decoIndex, initialSize, initialX, initialY }
+        let resizingTextBox = null; // { itemId, initialWidth, initialHeight }
+
         // 初始化
         function init() {
             // 尝试从LocalStorage加载
@@ -1085,6 +1549,9 @@
                 loadDefaultConfig();
             }
             initEmojiPicker();
+
+            // 保存初始历史记录
+            saveHistory();
         }
 
         // 加载默认配置
@@ -1124,7 +1591,8 @@
             
             configName = 'Must vs Have to';
             document.getElementById('configName').value = configName;
-            renderConfig();
+            renderElementList();
+            renderEditPanel(null);  // 不自动选中任何元素
             generateAllVersions();
         }
 
@@ -1144,7 +1612,8 @@
 
             document.getElementById('configName').value = configName;
 
-            renderConfig();
+            renderElementList();
+            renderEditPanel(null);  // 不自动选中任何元素
             if (!manualVersions || allVersions.length === 0) {
                 generateAllVersions();
             } else {
@@ -1531,6 +2000,19 @@
                     if (item.externalEmojis[currentEmojiPicker.emojiIndex] !== undefined) {
                         item.externalEmojis[currentEmojiPicker.emojiIndex] = emoji;
                     }
+                } else if (currentEmojiPicker.field === 'decorativeSticker') {
+                    // 从画布添加装饰emoji贴纸
+                    if (!item.decorativeEmojis) {
+                        item.decorativeEmojis = [];
+                    }
+                    // 在文本框中心位置添加新的装饰emoji
+                    item.decorativeEmojis.push({
+                        emoji: emoji,
+                        x: 0,  // 相对于文本框容器的偏移
+                        y: 0,
+                        fontSize: 32
+                    });
+                    saveHistory();
                 } else if (currentEmojiPicker.field === 'decorativeEmojis' || currentEmojiPicker.field === 'editor-decorativeEmojis') {
                     if (!item.decorativeEmojis) {
                         item.decorativeEmojis = [];
@@ -1542,20 +2024,10 @@
                     item.emojis[currentEmojiPicker.emojiIndex] = emoji;
                 }
 
-                // 更新配置面板
-                renderConfig();
-
-                // 如果是从编辑器中选择的，也更新编辑器
-                if (currentEditingItemId === currentEmojiPicker.itemId) {
-                    if (item.displayStyle === 'icon') {
-                        renderEditorEmojis(item.id, item.emojis);
-                    } else {
-                        renderEditorExternalEmojis(item.id, item.externalEmojis || []);
-                        renderEditorDecorativeEmojis(item.id, item.decorativeEmojis || []);
-                    }
-                }
-
-                generateAllVersions();
+                // 更新UI
+                renderElementList();
+                renderEditPanel(selectedItemId);
+                updatePreview();
             }
             closeEmojiPicker();
         }
@@ -1627,12 +2099,14 @@
                 }
 
                 const combinations = getCombinations(itemEmojiLists);
-                
+
                 // 默认只生成一个版本（使用第一个emoji组合）
                 if (combinations.length > 0) {
+                    // 保留现有的positions信息
+                    const existingPositions = allVersions[0]?.positions || {};
                     allVersions = [{
                         combination: combinations[0],
-                        positions: {},
+                        positions: existingPositions,
                         name: `版本 1`
                     }];
                 } else {
@@ -1694,7 +2168,7 @@
                 subtitle: "",
                 color: "#3B82F6",
                 shape: "circle",
-                displayStyle: "icon",
+                displayStyle: "textbox",  // 默认改为文本框样式
                 emojis: [""],
                 boxContent: "",
                 boxStyle: "rounded",
@@ -1704,14 +2178,21 @@
                 decorativeEmojis: [] // {emoji, x, y, fontSize}
             };
             items.push(newItem);
-            renderConfig();
+            saveHistory();
+            selectItem(newItem.id);  // 自动选中新元素
             generateAllVersions();
         }
 
         // 删除对比项
         function deleteItem(id) {
             items = items.filter(item => item.id !== id);
-            renderConfig();
+            saveHistory();
+            // 如果删除的是当前选中的元素，清空选择
+            if (selectedItemId === id) {
+                selectedItemId = null;
+            }
+            renderElementList();
+            renderEditPanel(selectedItemId);
             generateAllVersions();
         }
 
@@ -1753,14 +2234,251 @@
                 const draggedItem = items[draggedIndex];
                 items.splice(draggedIndex, 1);
                 items.splice(dropIndex, 0, draggedItem);
-                renderConfig();
+                saveHistory();
+                renderElementList();
+                renderEditPanel(selectedItemId);
                 generateAllVersions();
             }
 
             return false;
         }
 
-        // 渲染配置面板
+        // ========== 新UI渲染函数 ==========
+
+        // 选择元素
+        function selectItem(itemId) {
+            selectedItemId = itemId;
+            renderElementList();
+            renderEditPanel(itemId);
+        }
+
+        // 渲染左侧元素列表
+        function renderElementList() {
+            const container = document.getElementById('elementList');
+            container.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'element-list-item';
+                if (item.id === selectedItemId) {
+                    itemDiv.classList.add('selected');
+                }
+                itemDiv.draggable = true;
+                itemDiv.ondragstart = (e) => handleDragStart(e, index);
+                itemDiv.ondragend = handleDragEnd;
+                itemDiv.ondragover = handleDragOver;
+                itemDiv.ondragenter = handleDragEnter;
+                itemDiv.ondragleave = handleDragLeave;
+                itemDiv.ondrop = (e) => handleDrop(e, index);
+                itemDiv.onclick = () => selectItem(item.id);
+
+                const icon = item.displayStyle === 'icon' ? '🎨' : '💬';
+                const title = item.title || item.boxContent || `元素 ${index + 1}`;
+                const preview = item.displayStyle === 'icon'
+                    ? (item.emojis && item.emojis[0] ? item.emojis.filter(e => e).join(' ') : '无emoji')
+                    : (item.boxContent ? item.boxContent.substring(0, 20) + (item.boxContent.length > 20 ? '...' : '') : '空内容');
+
+                itemDiv.innerHTML = `
+                    <div class="element-list-item-drag">☰</div>
+                    <div class="element-list-item-header">
+                        <div class="element-list-item-icon">${icon}</div>
+                        <div class="element-list-item-title">${title}</div>
+                    </div>
+                    <div class="element-list-item-preview">${preview}</div>
+                `;
+                container.appendChild(itemDiv);
+            });
+
+            // 如果没有选中的元素，显示空状态
+            if (items.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">暂无元素</div>';
+            }
+        }
+
+        // 渲染右侧编辑面板
+        function renderEditPanel(itemId) {
+            const container = document.getElementById('editPanelContent');
+
+            if (!itemId) {
+                container.innerHTML = `
+                    <div class="edit-panel-empty">
+                        <div class="edit-panel-empty-icon">✏️</div>
+                        <div>选择一个元素开始编辑</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const index = items.indexOf(item);
+
+            container.innerHTML = `
+                <h2>编辑元素 ${index + 1}</h2>
+
+                <div style="margin-bottom: 15px; display: flex; gap: 8px;">
+                    <button class="btn-duplicate" onclick="duplicateItem(${item.id}); event.stopPropagation();" style="flex: 1;">📋 复制</button>
+                    <button class="btn-delete" onclick="deleteItem(${item.id}); selectItem(null); event.stopPropagation();" style="flex: 1;">删除</button>
+                </div>
+
+                <!-- 基本设置 -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span class="collapsible-header-title">基本设置</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="form-group">
+                            <label>显示样式</label>
+                            <div class="button-group">
+                                <button class="option-btn ${item.displayStyle === 'icon' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'displayStyle', 'icon'); selectItem(${item.id}); generateAllVersions();">
+                                    🎨 图标样式
+                                </button>
+                                <button class="option-btn ${item.displayStyle === 'textbox' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'displayStyle', 'textbox'); selectItem(${item.id}); generateAllVersions();">
+                                    💬 文本框样式
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>标题（可选）</label>
+                            <div class="input-wrapper">
+                                <input type="text" value="${item.title}" placeholder="留空则不显示标题"
+                                       oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions(); renderElementList();">
+                                <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'title', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>副标题（可选）</label>
+                            <div class="input-wrapper">
+                                <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
+                                       oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions(); renderElementList();">
+                                <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'subtitle', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>背景颜色</label>
+                            <input type="color" value="${item.color}"
+                                   onchange="updateItem(${item.id}, 'color', this.value); generateAllVersions();">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容设置 -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span class="collapsible-header-title">${item.displayStyle === 'icon' ? 'Emoji设置' : '文本框内容'}</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        ${item.displayStyle === 'icon' ? `
+                            <div class="form-group">
+                                <label>Emoji</label>
+                                <div class="emoji-input-group" id="emojis-${item.id}"></div>
+                                <button class="btn-add-emoji" onclick="addEmoji(${item.id})">+ 添加Emoji</button>
+                            </div>
+                        ` : `
+                            <div class="form-group">
+                                <label>文本框内容</label>
+                                <div class="input-wrapper">
+                                    <textarea placeholder="输入文字和emoji" rows="4"
+                                              oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions(); renderElementList();">${item.boxContent}</textarea>
+                                    <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                                </div>
+                                <div class="style-help" style="font-size: 11px; margin-top: 5px;">
+                                    支持Markdown: <code>**粗体**</code> <code>*斜体*</code> <code>~~删除线~~</code> <code>==高亮==</code>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                </div>
+
+                <!-- 高级设置 -->
+                <div class="collapsible-section collapsed">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span class="collapsible-header-title">高级设置</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        ${item.displayStyle === 'icon' ? `
+                            <div class="form-group">
+                                <label>形状</label>
+                                <div class="button-group">
+                                    <button class="option-btn ${item.shape === 'circle' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'shape', 'circle'); generateAllVersions();">
+                                        ⭕ 圆形
+                                    </button>
+                                    <button class="option-btn ${item.shape === 'square' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'shape', 'square'); generateAllVersions();">
+                                        ◻️ 方形
+                                    </button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="form-group">
+                                <label>文本框样式</label>
+                                <div class="button-group">
+                                    <button class="option-btn ${item.boxStyle === 'rounded' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'boxStyle', 'rounded'); generateAllVersions();">
+                                        ▢ 圆角矩形
+                                    </button>
+                                    <button class="option-btn ${item.boxStyle === 'rectangle' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'boxStyle', 'rectangle'); generateAllVersions();">
+                                        ▭ 长方形
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>框外Emoji</label>
+                                <div class="emoji-input-group" id="external-emojis-${item.id}"></div>
+                                <button class="btn-add-emoji" onclick="addExternalEmoji(${item.id})">+ 添加框外Emoji</button>
+                            </div>
+                            <div class="form-group">
+                                <label>框外Emoji距离：<span id="distance-value-${item.id}">${item.externalEmojiDistance || 65}px</span></label>
+                                <input type="range" min="30" max="150" step="5" value="${item.externalEmojiDistance || 65}"
+                                       style="width: 100%;"
+                                       oninput="updateItem(${item.id}, 'externalEmojiDistance', parseInt(this.value)); document.getElementById('distance-value-${item.id}').textContent = this.value + 'px'; generateAllVersions();">
+                            </div>
+                            <div class="form-group">
+                                <label>装饰Emoji</label>
+                                <div class="emoji-input-group" id="decorative-emojis-${item.id}"></div>
+                                <button class="btn-add-emoji" onclick="addDecorativeEmoji(${item.id})">+ 添加装饰Emoji</button>
+                            </div>
+                        `}
+                        <div class="form-group">
+                            <label>颜色预设</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                ${colorPresets.map(preset => `
+                                    <button class="color-preset-btn"
+                                            style="background: ${preset.bg}; color: ${preset.text}; padding: 4px 8px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;"
+                                            onclick="updateItem(${item.id}, 'color', '${preset.bg}'); selectItem(${item.id}); generateAllVersions();">
+                                        ${preset.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 渲染emoji输入框
+            if (item.displayStyle === 'icon') {
+                renderEmojis(item.id, item.emojis);
+            } else {
+                renderExternalEmojis(item.id, item.externalEmojis || []);
+                renderDecorativeEmojis(item.id, item.decorativeEmojis || []);
+            }
+        }
+
+        // 折叠/展开功能
+        function toggleCollapsible(headerElement) {
+            const section = headerElement.parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        // 渲染配置面板 (旧版，保留用于兼容)
         function renderConfig() {
             const container = document.getElementById('itemsConfig');
             container.innerHTML = '';
@@ -1780,7 +2498,10 @@
                     <div class="drag-handle">☰</div>
                     <div class="item-config-header">
                         <span class="item-config-title">对比项 ${index + 1}</span>
-                        <button class="btn-delete" onclick="deleteItem(${item.id})">删除</button>
+                        <div>
+                            <button class="btn-duplicate" onclick="duplicateItem(${item.id})">📋 复制</button>
+                            <button class="btn-delete" onclick="deleteItem(${item.id})">删除</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>显示样式</label>
@@ -1797,13 +2518,19 @@
                     </div>
                     <div class="form-group">
                         <label>标题（可选）</label>
-                        <input type="text" value="${item.title}" placeholder="留空则不显示标题"
-                               oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions();">
+                        <div class="input-wrapper">
+                            <input type="text" value="${item.title}" placeholder="留空则不显示标题"
+                                   oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions();">
+                            <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'title', ''); renderConfig(); generateAllVersions();">×</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>副标题（可选）</label>
-                        <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
-                               oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions();">
+                        <div class="input-wrapper">
+                            <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
+                                   oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions();">
+                            <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'subtitle', ''); renderConfig(); generateAllVersions();">×</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>颜色预设</label>
@@ -1842,8 +2569,11 @@
                     ` : `
                         <div class="form-group">
                             <label>文本框内容（支持文字和emoji混排）</label>
-                            <textarea placeholder="输入文字和emoji，例如：must 🤔&#10;支持Markdown样式：&#10;**粗体** *斜体* ~~删除线~~ ==高亮==" 
-                                      oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions();">${item.boxContent}</textarea>
+                            <div class="input-wrapper">
+                                <textarea placeholder="输入文字和emoji，例如：must 🤔&#10;支持Markdown样式：&#10;**粗体** *斜体* ~~删除线~~ ==高亮=="
+                                          oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions();">${item.boxContent}</textarea>
+                                <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'boxContent', ''); renderConfig(); generateAllVersions();">×</button>
+                            </div>
                             <div class="style-help">
                                 <strong>Markdown样式语法：</strong><br>
                                 <code>**文字**</code> 或 <code>__文字__</code> - 加粗<br>
@@ -2140,6 +2870,249 @@
             }
         }
 
+        // ========== 历史记录管理 ==========
+
+        // 保存当前状态到历史记录
+        function saveHistory() {
+            if (isRestoringHistory) return;
+
+            // 移除当前索引之后的所有历史记录
+            history = history.slice(0, historyIndex + 1);
+
+            // 深拷贝当前状态
+            const state = {
+                items: JSON.parse(JSON.stringify(items)),
+                allVersions: JSON.parse(JSON.stringify(allVersions)),
+                currentVersion: currentVersion,
+                configName: configName
+            };
+
+            history.push(state);
+            historyIndex++;
+
+            // 限制历史记录数量（保留最近50个）
+            if (history.length > 50) {
+                history.shift();
+                historyIndex--;
+            }
+
+            updateHistoryButtons();
+        }
+
+        // 更新历史记录按钮状态
+        function updateHistoryButtons() {
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+
+            if (undoBtn) undoBtn.disabled = historyIndex <= 0;
+            if (redoBtn) redoBtn.disabled = historyIndex >= history.length - 1;
+        }
+
+        // 撤销
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreHistoryState(history[historyIndex]);
+            }
+        }
+
+        // 重做
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                restoreHistoryState(history[historyIndex]);
+            }
+        }
+
+        // 恢复历史状态
+        function restoreHistoryState(state) {
+            isRestoringHistory = true;
+
+            items = JSON.parse(JSON.stringify(state.items));
+            allVersions = JSON.parse(JSON.stringify(state.allVersions));
+            currentVersion = state.currentVersion;
+            configName = state.configName;
+
+            document.getElementById('configName').value = configName;
+            renderConfig();
+            updatePreview();
+            updateHistoryButtons();
+
+            isRestoringHistory = false;
+        }
+
+        // ========== 复制文本框功能 ==========
+
+        function duplicateItem(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            // 深拷贝元素
+            const newItem = JSON.parse(JSON.stringify(item));
+
+            // 生成新ID
+            newItem.id = Date.now();
+
+            // 如果有位置信息，稍微偏移
+            const version = allVersions[currentVersion];
+            if (version && version.positions) {
+                const oldPos = version.positions[items.indexOf(item)];
+                if (oldPos) {
+                    // 在当前版本的positions中添加新位置（偏移20px）
+                    version.positions.push({
+                        x: oldPos.x + 20,
+                        y: oldPos.y + 20
+                    });
+                }
+            }
+
+            // 添加到items数组
+            items.push(newItem);
+
+            saveHistory();
+            selectItem(newItem.id);  // 自动选中新元素
+            generateAllVersions();
+        }
+
+        // ========== 自动排版功能 ==========
+
+        function autoLayout() {
+            if (items.length === 0) return;
+
+            // 获取当前版本
+            const version = allVersions[currentVersion];
+            if (!version || !version.positions) return;
+
+            // 按照文本框内容长度排序
+            const sortedItems = items.map((item, index) => ({
+                item,
+                index,
+                contentLength: (item.boxContent || item.title || '').length
+            })).sort((a, b) => b.contentLength - a.contentLength);
+
+            // 设置布局参数
+            const startX = 100; // 左对齐的X坐标
+            const startY = 100; // 起始Y坐标
+            const spacing = 150; // 元素间距
+
+            // 重新定位所有元素
+            sortedItems.forEach((sortedItem, layoutIndex) => {
+                const posIndex = sortedItem.index;
+                if (version.positions[posIndex]) {
+                    version.positions[posIndex].x = startX;
+                    version.positions[posIndex].y = startY + (layoutIndex * spacing);
+                }
+            });
+
+            saveHistory();
+            updatePreview();
+        }
+
+        // ========== 对齐线功能 ==========
+
+        // 显示对齐线
+        function showAlignmentGuides(currentElement, currentPos) {
+            // 移除现有对齐线
+            removeAlignmentGuides();
+
+            const container = document.getElementById('previewContainer');
+            const version = allVersions[currentVersion];
+            if (!version || !version.positions) return;
+
+            const currentRect = currentElement.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // 存储最近的对齐位置
+            let nearestVertical = null;
+            let nearestHorizontal = null;
+            let minVerticalDiff = alignmentThreshold;
+            let minHorizontalDiff = alignmentThreshold;
+
+            // 检查与其他元素的对齐
+            Object.entries(version.positions).forEach(([index, pos]) => {
+                const indexNum = parseInt(index);
+                const otherElement = container.querySelector(`[data-item-index="${indexNum}"]`);
+                if (!otherElement || otherElement === currentElement) return;
+
+                const otherRect = otherElement.getBoundingClientRect();
+
+                // 检查垂直对齐（左边、中心、右边）
+                const leftDiff = Math.abs(currentPos.x - pos.x);
+                const centerCurrentX = currentPos.x + currentRect.width / 2;
+                const centerOtherX = pos.x + otherRect.width / 2;
+                const centerDiff = Math.abs(centerCurrentX - centerOtherX);
+                const rightCurrentX = currentPos.x + currentRect.width;
+                const rightOtherX = pos.x + otherRect.width;
+                const rightDiff = Math.abs(rightCurrentX - rightOtherX);
+
+                // 找到最近的垂直对齐
+                if (leftDiff < minVerticalDiff) {
+                    minVerticalDiff = leftDiff;
+                    nearestVertical = { type: 'left', position: pos.x, snapX: pos.x };
+                }
+                if (centerDiff < minVerticalDiff) {
+                    minVerticalDiff = centerDiff;
+                    nearestVertical = { type: 'center', position: centerOtherX, snapX: centerOtherX - currentRect.width / 2 };
+                }
+                if (rightDiff < minVerticalDiff) {
+                    minVerticalDiff = rightDiff;
+                    nearestVertical = { type: 'right', position: rightOtherX, snapX: rightOtherX - currentRect.width };
+                }
+
+                // 检查水平对齐（顶部、中心、底部）
+                const topDiff = Math.abs(currentPos.y - pos.y);
+                const centerCurrentY = currentPos.y + currentRect.height / 2;
+                const centerOtherY = pos.y + otherRect.height / 2;
+                const centerYDiff = Math.abs(centerCurrentY - centerOtherY);
+                const bottomCurrentY = currentPos.y + currentRect.height;
+                const bottomOtherY = pos.y + otherRect.height;
+                const bottomDiff = Math.abs(bottomCurrentY - bottomOtherY);
+
+                // 找到最近的水平对齐
+                if (topDiff < minHorizontalDiff) {
+                    minHorizontalDiff = topDiff;
+                    nearestHorizontal = { type: 'top', position: pos.y, snapY: pos.y };
+                }
+                if (centerYDiff < minHorizontalDiff) {
+                    minHorizontalDiff = centerYDiff;
+                    nearestHorizontal = { type: 'center', position: centerOtherY, snapY: centerOtherY - currentRect.height / 2 };
+                }
+                if (bottomDiff < minHorizontalDiff) {
+                    minHorizontalDiff = bottomDiff;
+                    nearestHorizontal = { type: 'bottom', position: bottomOtherY, snapY: bottomOtherY - currentRect.height };
+                }
+            });
+
+            // 显示对齐线，根据设置决定是否吸附
+            if (nearestVertical) {
+                createAlignmentGuide('vertical', nearestVertical.position);
+                if (enableAlignmentSnap) {
+                    currentPos.x = nearestVertical.snapX;
+                }
+            }
+            if (nearestHorizontal) {
+                createAlignmentGuide('horizontal', nearestHorizontal.position);
+                if (enableAlignmentSnap) {
+                    currentPos.y = nearestHorizontal.snapY;
+                }
+            }
+        }
+
+        // 创建对齐线
+        function createAlignmentGuide(type, position) {
+            const container = document.getElementById('previewContainer');
+            const guide = document.createElement('div');
+            guide.className = `alignment-guide ${type}`;
+            guide.style[type === 'vertical' ? 'left' : 'top'] = position + 'px';
+            container.appendChild(guide);
+        }
+
+        // 移除对齐线
+        function removeAlignmentGuides() {
+            const guides = document.querySelectorAll('.alignment-guide');
+            guides.forEach(guide => guide.remove());
+        }
+
         // 解析Markdown样式标记并转换为HTML
         function parseTextStyles(text) {
             if (!text) return '';
@@ -2252,7 +3225,22 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'comparison-item draggable';
                 itemDiv.dataset.itemIndex = itemIndex;
-                
+
+                // 添加选中样式
+                if (item.id === selectedItemId) {
+                    itemDiv.classList.add('selected');
+                }
+
+                // 点击元素时选中
+                itemDiv.onclick = (e) => {
+                    if (!e.target.closest('.item-action-btn') && !e.target.closest('button')) {
+                        selectItem(item.id);
+                        // 更新所有画布元素的选中状态
+                        document.querySelectorAll('.comparison-item').forEach(el => el.classList.remove('selected'));
+                        itemDiv.classList.add('selected');
+                    }
+                };
+
                 // 设置位置
                 const pos = positions[itemIndex] || {};
                 if (pos.x !== undefined && pos.y !== undefined) {
@@ -2320,15 +3308,18 @@
 
                     itemDiv.innerHTML = `
                         <div class="item-actions">
-                            <button class="item-action-btn edit" onclick="openItemEditor(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
+                            <button class="item-action-btn add-sticker" onclick="addDecorativeStickerToCanvas(${item.id}); event.stopPropagation();" title="添加贴纸">➕</button>
+                            <button class="item-action-btn edit" onclick="selectItem(${item.id}); event.stopPropagation();" title="编辑">✏️</button>
                             <button class="item-action-btn delete" onclick="deleteItemFromCanvas(${item.id}); event.stopPropagation();" title="删除">🗑️</button>
                         </div>
-                        <div class="text-box-container" id="text-box-container-${item.id}">
+                        <div class="text-box-container ${item.id === selectedItemId ? 'selected' : ''}" id="text-box-container-${item.id}" style="position: relative;">
                             ${externalEmojisHTML}
-                            <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white;">
+                            <div class="text-box ${item.boxStyle}" style="background-color: ${item.color}; color: white; ${item.customWidth ? 'width: ' + item.customWidth + 'px;' : ''}">
                                 ${styledContent}
                             </div>
-                            ${decorativeEmojisHTML}
+                            <div class="text-box-resize-handle e" data-item-id="${item.id}" data-direction="e"></div>
+                            <div class="text-box-resize-handle s" data-item-id="${item.id}" data-direction="s"></div>
+                            <div class="text-box-resize-handle se" data-item-id="${item.id}" data-direction="se"></div>
                         </div>
                         ${hasText ? `<div class="text-content">
                             ${item.title ? `<div class="title">${item.title}</div>` : ''}
@@ -2336,20 +3327,250 @@
                         </div>` : ''}
                     `;
                 }
-                
+
                 // 添加拖拽事件
                 itemDiv.addEventListener('mousedown', (e) => startDrag(e, itemIndex));
 
                 previewDiv.appendChild(itemDiv);
 
-                // 为装饰emoji添加拖拽事件
+                // 渲染装饰emoji
+                if (item.displayStyle === 'textbox' && item.decorativeEmojis && item.decorativeEmojis.length > 0) {
+                    const container = itemDiv.querySelector('.text-box-container');
+                    if (container) {
+                        renderCanvasDecorativeEmojis(item.id, item.decorativeEmojis, container);
+                    }
+                }
+
+                // 为文本框调整手柄添加事件
                 if (item.displayStyle === 'textbox') {
-                    const decoEmojis = itemDiv.querySelectorAll('.decorative-emoji');
-                    decoEmojis.forEach(decoEmoji => {
-                        decoEmoji.addEventListener('mousedown', (e) => startDecorativeEmojiDrag(e, item.id, parseInt(decoEmoji.dataset.decoIndex)));
+                    const resizeHandles = itemDiv.querySelectorAll('.text-box-resize-handle');
+                    resizeHandles.forEach(handle => {
+                        handle.addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            startTextBoxResize(e, item.id, handle.dataset.direction);
+                        });
                     });
                 }
             });
+        }
+
+        // 开始调整文本框大小
+        function startTextBoxResize(e, itemId, direction) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const textBoxContainer = document.getElementById(`text-box-container-${itemId}`);
+            const textBox = textBoxContainer?.querySelector('.text-box');
+            if (!textBox) return;
+
+            const rect = textBox.getBoundingClientRect();
+
+            resizingTextBox = {
+                itemId,
+                direction,
+                initialWidth: item.customWidth || rect.width,
+                initialHeight: item.customHeight || rect.height,
+                initialX: e.clientX,
+                initialY: e.clientY
+            };
+
+            document.addEventListener('mousemove', handleTextBoxResize);
+            document.addEventListener('mouseup', stopTextBoxResize);
+        }
+
+        // 处理文本框大小调整
+        function handleTextBoxResize(e) {
+            if (!resizingTextBox) return;
+
+            const { itemId, direction, initialWidth, initialHeight, initialX, initialY } = resizingTextBox;
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const deltaX = e.clientX - initialX;
+            const deltaY = e.clientY - initialY;
+
+            let newWidth = initialWidth;
+            let newHeight = initialHeight;
+
+            // 根据方向调整大小
+            if (direction.includes('e')) {
+                newWidth = initialWidth + deltaX;
+            }
+            if (direction.includes('s')) {
+                newHeight = initialHeight + deltaY;
+            }
+
+            // 最小尺寸限制
+            newWidth = Math.max(100, newWidth);
+            newHeight = Math.max(50, newHeight);
+
+            // 保存到item
+            if (!item.customWidth) item.customWidth = initialWidth;
+            if (!item.customHeight) item.customHeight = initialHeight;
+
+            item.customWidth = Math.round(newWidth);
+            item.customHeight = Math.round(newHeight);
+
+            // 实时更新显示
+            const textBox = document.querySelector(`#text-box-container-${itemId} .text-box`);
+            if (textBox) {
+                textBox.style.width = newWidth + 'px';
+                if (direction.includes('s')) {
+                    textBox.style.minHeight = newHeight + 'px';
+                }
+            }
+        }
+
+        // 停止文本框大小调整
+        function stopTextBoxResize() {
+            if (resizingTextBox) {
+                saveHistory();
+                renderElementList();
+                renderEditPanel(selectedItemId);
+            }
+            resizingTextBox = null;
+            document.removeEventListener('mousemove', handleTextBoxResize);
+            document.removeEventListener('mouseup', stopTextBoxResize);
+        }
+
+        // 在画布上渲染装饰emoji
+        function renderCanvasDecorativeEmojis(itemId, decorativeEmojis, container) {
+            // 清除现有的装饰emoji
+            const existing = container.querySelectorAll('.decorative-emoji-item');
+            existing.forEach(el => el.remove());
+
+            decorativeEmojis.forEach((deco, decoIndex) => {
+                const emojiDiv = document.createElement('div');
+                emojiDiv.className = 'decorative-emoji-item';
+                emojiDiv.dataset.itemId = itemId;
+                emojiDiv.dataset.decoIndex = decoIndex;
+                emojiDiv.style.left = (deco.x || 0) + 'px';
+                emojiDiv.style.top = (deco.y || 0) + 'px';
+                emojiDiv.style.fontSize = (deco.fontSize || 32) + 'px';
+
+                // 检查是否选中
+                if (selectedDecorativeEmoji &&
+                    selectedDecorativeEmoji.itemId === itemId &&
+                    selectedDecorativeEmoji.decoIndex === decoIndex) {
+                    emojiDiv.classList.add('selected');
+                }
+
+                emojiDiv.innerHTML = `
+                    ${deco.emoji}
+                    <button class="decorative-emoji-delete" onclick="removeDecorativeEmoji(${itemId}, ${decoIndex}); event.stopPropagation();">×</button>
+                    <div class="resize-handle se" data-item-id="${itemId}" data-deco-index="${decoIndex}"></div>
+                `;
+
+                // 点击选中
+                emojiDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!e.target.closest('.decorative-emoji-delete') && !e.target.closest('.resize-handle')) {
+                        selectDecorativeEmoji(itemId, decoIndex);
+                    }
+                });
+
+                // 添加拖拽事件
+                emojiDiv.addEventListener('mousedown', (e) => {
+                    if (!e.target.closest('.decorative-emoji-delete') && !e.target.closest('.resize-handle')) {
+                        startDecorativeEmojiDrag(e, itemId, decoIndex);
+                    }
+                });
+
+                // 调整大小手柄事件
+                const resizeHandle = emojiDiv.querySelector('.resize-handle');
+                if (resizeHandle) {
+                    resizeHandle.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        startEmojiResize(e, itemId, decoIndex);
+                    });
+                }
+
+                container.appendChild(emojiDiv);
+            });
+        }
+
+        // 选中装饰emoji
+        function selectDecorativeEmoji(itemId, decoIndex) {
+            selectedDecorativeEmoji = { itemId, decoIndex };
+            updatePreview();
+        }
+
+        // 开始调整emoji大小
+        function startEmojiResize(e, itemId, decoIndex) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const item = items.find(i => i.id === itemId);
+            if (!item || !item.decorativeEmojis[decoIndex]) return;
+
+            resizingEmoji = {
+                itemId,
+                decoIndex,
+                initialSize: item.decorativeEmojis[decoIndex].fontSize || 32,
+                initialX: e.clientX,
+                initialY: e.clientY
+            };
+
+            document.addEventListener('mousemove', handleEmojiResize);
+            document.addEventListener('mouseup', stopEmojiResize);
+        }
+
+        // 处理emoji大小调整
+        function handleEmojiResize(e) {
+            if (!resizingEmoji) return;
+
+            const { itemId, decoIndex, initialSize, initialX, initialY } = resizingEmoji;
+            const item = items.find(i => i.id === itemId);
+            if (!item || !item.decorativeEmojis[decoIndex]) return;
+
+            // 计算鼠标移动的距离（对角线）
+            const deltaX = e.clientX - initialX;
+            const deltaY = e.clientY - initialY;
+            const delta = (deltaX + deltaY) / 2; // 平均值
+
+            // 新的大小（最小16px，最大128px）
+            let newSize = initialSize + delta;
+            newSize = Math.max(16, Math.min(128, newSize));
+
+            item.decorativeEmojis[decoIndex].fontSize = Math.round(newSize);
+
+            // 实时更新显示
+            const emojiElement = document.querySelector(`.decorative-emoji-item[data-item-id="${itemId}"][data-deco-index="${decoIndex}"]`);
+            if (emojiElement) {
+                emojiElement.style.fontSize = newSize + 'px';
+            }
+        }
+
+        // 停止emoji大小调整
+        function stopEmojiResize() {
+            if (resizingEmoji) {
+                saveHistory();
+                renderElementList();
+                renderEditPanel(selectedItemId);
+            }
+            resizingEmoji = null;
+            document.removeEventListener('mousemove', handleEmojiResize);
+            document.removeEventListener('mouseup', stopEmojiResize);
+        }
+
+        // 添加装饰贴纸到画布
+        function addDecorativeStickerToCanvas(itemId) {
+            openEmojiPicker(itemId, null, 'decorativeSticker');
+        }
+
+        // 移除装饰emoji
+        function removeDecorativeEmoji(itemId, decoIndex) {
+            const item = items.find(i => i.id === itemId);
+            if (item && item.decorativeEmojis) {
+                item.decorativeEmojis.splice(decoIndex, 1);
+                saveHistory();
+                updatePreview();
+                renderElementList();
+                renderEditPanel(selectedItemId);
+            }
         }
 
         // 开始拖拽
@@ -2378,25 +3599,33 @@
         // 拖拽移动
         function handleDragMove(e) {
             if (draggedPreviewItem === null) return;
-            
+
             const item = document.querySelector(`[data-item-index="${draggedPreviewItem}"]`);
             if (!item) return;
-            
+
             const container = item.parentElement;
             const containerRect = container.getBoundingClientRect();
-            
+
             let x = e.clientX - containerRect.left - dragOffset.x;
             let y = e.clientY - containerRect.top - dragOffset.y;
-            
+
             // 限制在容器内
             const itemRect = item.getBoundingClientRect();
             x = Math.max(0, Math.min(x, containerRect.width - itemRect.width));
             y = Math.max(0, Math.min(y, containerRect.height - itemRect.height));
-            
+
+            // 显示对齐线，如果启用吸附则自动对齐
+            const currentPos = { x, y };
+            showAlignmentGuides(item, currentPos);
+            if (enableAlignmentSnap) {
+                x = currentPos.x;
+                y = currentPos.y;
+            }
+
             item.style.left = x + 'px';
             item.style.top = y + 'px';
             item.style.transform = 'none';
-            
+
             // 保存位置
             if (!allVersions[currentVersion].positions) {
                 allVersions[currentVersion].positions = {};
@@ -2413,8 +3642,12 @@
                     item.style.zIndex = '';
                 }
                 draggedPreviewItem = null;
+
+                // 移除对齐线并保存历史记录
+                removeAlignmentGuides();
+                saveHistory();
             }
-            
+
             document.removeEventListener('mousemove', handleDragMove);
             document.removeEventListener('mouseup', stopDrag);
         }
@@ -2428,12 +3661,15 @@
             e.stopPropagation();
             e.preventDefault();
 
+            const item = items.find(i => i.id === itemId);
+            if (!item || !item.decorativeEmojis[decoIndex]) return;
+
             draggedDecoEmoji = { itemId, decoIndex };
 
-            const container = document.getElementById(`text-box-container-${itemId}`);
-            if (!container) return;
+            const emojiElement = e.currentTarget;
+            emojiElement.classList.add('dragging');
 
-            const rect = container.getBoundingClientRect();
+            // 记录初始鼠标位置
             decoEmojiDragOffset.x = e.clientX;
             decoEmojiDragOffset.y = e.clientY;
 
@@ -2449,37 +3685,46 @@
             const item = items.find(i => i.id === itemId);
             if (!item || !item.decorativeEmojis[decoIndex]) return;
 
-            const container = document.getElementById(`text-box-container-${itemId}`);
-            if (!container) return;
-
-            const rect = container.getBoundingClientRect();
+            // 计算移动距离
             const deltaX = e.clientX - decoEmojiDragOffset.x;
             const deltaY = e.clientY - decoEmojiDragOffset.y;
 
-            // 计算新的百分比位置
-            const deltaXPercent = (deltaX / rect.width) * 100;
-            const deltaYPercent = (deltaY / rect.height) * 100;
+            // 更新位置（像素）
+            let newX = (item.decorativeEmojis[decoIndex].x || 0) + deltaX;
+            let newY = (item.decorativeEmojis[decoIndex].y || 0) + deltaY;
 
-            let newX = item.decorativeEmojis[decoIndex].x + deltaXPercent;
-            let newY = item.decorativeEmojis[decoIndex].y + deltaYPercent;
-
-            // 限制在0-100%范围内
-            newX = Math.max(0, Math.min(100, newX));
-            newY = Math.max(0, Math.min(100, newY));
+            // 限制移动范围（相对于文本框容器，可以移动到±200px范围内）
+            newX = Math.max(-200, Math.min(200, newX));
+            newY = Math.max(-200, Math.min(200, newY));
 
             item.decorativeEmojis[decoIndex].x = newX;
             item.decorativeEmojis[decoIndex].y = newY;
 
+            // 更新起始位置
             decoEmojiDragOffset.x = e.clientX;
             decoEmojiDragOffset.y = e.clientY;
 
-            updatePreview();
+            // 实时更新位置
+            const emojiElement = document.querySelector(`.decorative-emoji-item[data-item-id="${itemId}"][data-deco-index="${decoIndex}"]`);
+            if (emojiElement) {
+                emojiElement.style.left = newX + 'px';
+                emojiElement.style.top = newY + 'px';
+            }
         }
 
         // 停止装饰emoji拖拽
         function stopDecoEmojiDrag() {
             if (draggedDecoEmoji) {
-                saveConfig();
+                // 移除dragging样式
+                const { itemId, decoIndex } = draggedDecoEmoji;
+                const emojiElement = document.querySelector(`.decorative-emoji-item[data-item-id="${itemId}"][data-deco-index="${decoIndex}"]`);
+                if (emojiElement) {
+                    emojiElement.classList.remove('dragging');
+                }
+
+                saveHistory();
+                renderElementList();
+                renderEditPanel(selectedItemId);
             }
             draggedDecoEmoji = null;
             document.removeEventListener('mousemove', handleDecoEmojiDragMove);
