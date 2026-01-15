@@ -931,12 +931,134 @@
                 font-size: 18px;
             }
         }
+
+        /* 输入框清除按钮样式 */
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input,
+        .input-wrapper textarea {
+            flex: 1;
+            padding-right: 35px !important;
+        }
+
+        .btn-clear-input {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .input-wrapper input:not(:placeholder-shown) + .btn-clear-input,
+        .input-wrapper textarea:not(:placeholder-shown) + .btn-clear-input {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .btn-clear-input:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        /* 对齐线样式 */
+        .alignment-guide {
+            position: absolute;
+            background: #3b82f6;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .alignment-guide.vertical {
+            width: 1px;
+            height: 100%;
+            top: 0;
+        }
+
+        .alignment-guide.horizontal {
+            height: 1px;
+            width: 100%;
+            left: 0;
+        }
+
+        /* 复制按钮样式 */
+        .btn-duplicate {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .btn-duplicate:hover {
+            background: #059669;
+        }
+
+        /* 历史记录按钮样式 */
+        .btn-history {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-history:hover {
+            background: #4b5563;
+        }
+
+        .btn-history:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* 自动排版按钮样式 */
+        .btn-auto-layout {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-auto-layout:hover {
+            background: #7c3aed;
+        }
     </style>
 </head>
 <body>
     <div class="app-header">
         <h1>📚 教学视觉对比图生成器</h1>
         <div class="header-actions">
+            <button class="btn btn-history" id="undoBtn" onclick="undo()" disabled>↶ 撤销</button>
+            <button class="btn btn-history" id="redoBtn" onclick="redo()" disabled>↷ 重做</button>
+            <button class="btn btn-auto-layout" onclick="autoLayout()">✨ 一键排版</button>
             <button class="btn btn-success" onclick="saveConfig()">💾 保存配置</button>
             <button class="btn btn-secondary" onclick="loadConfig()">📂 加载配置</button>
             <button class="btn btn-primary" onclick="exportHTML()">📄 导出HTML</button>
@@ -951,8 +1073,11 @@
             
             <div class="config-name-group">
                 <label>配置名称</label>
-                <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
-                       value="" oninput="updateConfigName()">
+                <div class="input-wrapper">
+                    <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
+                           value="" oninput="updateConfigName()">
+                    <button class="btn-clear-input" type="button" onclick="document.getElementById('configName').value = ''; updateConfigName();">×</button>
+                </div>
             </div>
 
             <div id="itemsConfig"></div>
@@ -1069,6 +1194,14 @@
             field: null
         };
 
+        // 历史记录管理
+        let history = [];
+        let historyIndex = -1;
+        let isRestoringHistory = false;
+
+        // 对齐线相关
+        let alignmentThreshold = 10; // 对齐阈值（像素）
+
         // 初始化
         function init() {
             // 尝试从LocalStorage加载
@@ -1085,6 +1218,9 @@
                 loadDefaultConfig();
             }
             initEmojiPicker();
+
+            // 保存初始历史记录
+            saveHistory();
         }
 
         // 加载默认配置
@@ -1704,6 +1840,7 @@
                 decorativeEmojis: [] // {emoji, x, y, fontSize}
             };
             items.push(newItem);
+            saveHistory();
             renderConfig();
             generateAllVersions();
         }
@@ -1711,6 +1848,7 @@
         // 删除对比项
         function deleteItem(id) {
             items = items.filter(item => item.id !== id);
+            saveHistory();
             renderConfig();
             generateAllVersions();
         }
@@ -1753,6 +1891,7 @@
                 const draggedItem = items[draggedIndex];
                 items.splice(draggedIndex, 1);
                 items.splice(dropIndex, 0, draggedItem);
+                saveHistory();
                 renderConfig();
                 generateAllVersions();
             }
@@ -1780,7 +1919,10 @@
                     <div class="drag-handle">☰</div>
                     <div class="item-config-header">
                         <span class="item-config-title">对比项 ${index + 1}</span>
-                        <button class="btn-delete" onclick="deleteItem(${item.id})">删除</button>
+                        <div>
+                            <button class="btn-duplicate" onclick="duplicateItem(${item.id})">📋 复制</button>
+                            <button class="btn-delete" onclick="deleteItem(${item.id})">删除</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>显示样式</label>
@@ -1797,13 +1939,19 @@
                     </div>
                     <div class="form-group">
                         <label>标题（可选）</label>
-                        <input type="text" value="${item.title}" placeholder="留空则不显示标题"
-                               oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions();">
+                        <div class="input-wrapper">
+                            <input type="text" value="${item.title}" placeholder="留空则不显示标题"
+                                   oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions();">
+                            <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'title', ''); renderConfig(); generateAllVersions();">×</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>副标题（可选）</label>
-                        <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
-                               oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions();">
+                        <div class="input-wrapper">
+                            <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
+                                   oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions();">
+                            <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'subtitle', ''); renderConfig(); generateAllVersions();">×</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>颜色预设</label>
@@ -1842,8 +1990,11 @@
                     ` : `
                         <div class="form-group">
                             <label>文本框内容（支持文字和emoji混排）</label>
-                            <textarea placeholder="输入文字和emoji，例如：must 🤔&#10;支持Markdown样式：&#10;**粗体** *斜体* ~~删除线~~ ==高亮==" 
-                                      oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions();">${item.boxContent}</textarea>
+                            <div class="input-wrapper">
+                                <textarea placeholder="输入文字和emoji，例如：must 🤔&#10;支持Markdown样式：&#10;**粗体** *斜体* ~~删除线~~ ==高亮=="
+                                          oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions();">${item.boxContent}</textarea>
+                                <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'boxContent', ''); renderConfig(); generateAllVersions();">×</button>
+                            </div>
                             <div class="style-help">
                                 <strong>Markdown样式语法：</strong><br>
                                 <code>**文字**</code> 或 <code>__文字__</code> - 加粗<br>
@@ -2140,6 +2291,225 @@
             }
         }
 
+        // ========== 历史记录管理 ==========
+
+        // 保存当前状态到历史记录
+        function saveHistory() {
+            if (isRestoringHistory) return;
+
+            // 移除当前索引之后的所有历史记录
+            history = history.slice(0, historyIndex + 1);
+
+            // 深拷贝当前状态
+            const state = {
+                items: JSON.parse(JSON.stringify(items)),
+                allVersions: JSON.parse(JSON.stringify(allVersions)),
+                currentVersion: currentVersion,
+                configName: configName
+            };
+
+            history.push(state);
+            historyIndex++;
+
+            // 限制历史记录数量（保留最近50个）
+            if (history.length > 50) {
+                history.shift();
+                historyIndex--;
+            }
+
+            updateHistoryButtons();
+        }
+
+        // 更新历史记录按钮状态
+        function updateHistoryButtons() {
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+
+            if (undoBtn) undoBtn.disabled = historyIndex <= 0;
+            if (redoBtn) redoBtn.disabled = historyIndex >= history.length - 1;
+        }
+
+        // 撤销
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreHistoryState(history[historyIndex]);
+            }
+        }
+
+        // 重做
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                restoreHistoryState(history[historyIndex]);
+            }
+        }
+
+        // 恢复历史状态
+        function restoreHistoryState(state) {
+            isRestoringHistory = true;
+
+            items = JSON.parse(JSON.stringify(state.items));
+            allVersions = JSON.parse(JSON.stringify(state.allVersions));
+            currentVersion = state.currentVersion;
+            configName = state.configName;
+
+            document.getElementById('configName').value = configName;
+            renderConfig();
+            updatePreview();
+            updateHistoryButtons();
+
+            isRestoringHistory = false;
+        }
+
+        // ========== 复制文本框功能 ==========
+
+        function duplicateItem(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            // 深拷贝元素
+            const newItem = JSON.parse(JSON.stringify(item));
+
+            // 生成新ID
+            newItem.id = Date.now();
+
+            // 如果有位置信息，稍微偏移
+            const version = allVersions[currentVersion];
+            if (version && version.positions) {
+                const oldPos = version.positions[items.indexOf(item)];
+                if (oldPos) {
+                    // 在当前版本的positions中添加新位置（偏移20px）
+                    version.positions.push({
+                        x: oldPos.x + 20,
+                        y: oldPos.y + 20
+                    });
+                }
+            }
+
+            // 添加到items数组
+            items.push(newItem);
+
+            saveHistory();
+            renderConfig();
+            generateAllVersions();
+        }
+
+        // ========== 自动排版功能 ==========
+
+        function autoLayout() {
+            if (items.length === 0) return;
+
+            // 获取当前版本
+            const version = allVersions[currentVersion];
+            if (!version || !version.positions) return;
+
+            // 按照文本框内容长度排序
+            const sortedItems = items.map((item, index) => ({
+                item,
+                index,
+                contentLength: (item.boxContent || item.title || '').length
+            })).sort((a, b) => b.contentLength - a.contentLength);
+
+            // 设置布局参数
+            const startX = 100; // 左对齐的X坐标
+            const startY = 100; // 起始Y坐标
+            const spacing = 150; // 元素间距
+
+            // 重新定位所有元素
+            sortedItems.forEach((sortedItem, layoutIndex) => {
+                const posIndex = sortedItem.index;
+                if (version.positions[posIndex]) {
+                    version.positions[posIndex].x = startX;
+                    version.positions[posIndex].y = startY + (layoutIndex * spacing);
+                }
+            });
+
+            saveHistory();
+            updatePreview();
+        }
+
+        // ========== 对齐线功能 ==========
+
+        // 显示对齐线
+        function showAlignmentGuides(currentElement, currentPos) {
+            // 移除现有对齐线
+            removeAlignmentGuides();
+
+            const container = document.getElementById('previewContainer');
+            const version = allVersions[currentVersion];
+            if (!version || !version.positions) return;
+
+            const currentRect = currentElement.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // 检查与其他元素的对齐
+            Object.entries(version.positions).forEach(([index, pos]) => {
+                const indexNum = parseInt(index);
+                const otherElement = container.querySelector(`[data-item-index="${indexNum}"]`);
+                if (!otherElement || otherElement === currentElement) return;
+
+                const otherRect = otherElement.getBoundingClientRect();
+
+                // 检查垂直对齐（左边、中心、右边）
+                const leftDiff = Math.abs((currentRect.left - containerRect.left) - pos.x);
+                const centerCurrentX = currentRect.left - containerRect.left + currentRect.width / 2;
+                const centerOtherX = pos.x + otherRect.width / 2;
+                const centerDiff = Math.abs(centerCurrentX - centerOtherX);
+                const rightCurrentX = currentRect.right - containerRect.left;
+                const rightOtherX = pos.x + otherRect.width;
+                const rightDiff = Math.abs(rightCurrentX - rightOtherX);
+
+                // 显示垂直对齐线
+                if (leftDiff < alignmentThreshold) {
+                    createAlignmentGuide('vertical', pos.x);
+                    currentPos.x = pos.x;
+                } else if (centerDiff < alignmentThreshold) {
+                    createAlignmentGuide('vertical', centerOtherX);
+                    currentPos.x = centerOtherX - currentRect.width / 2;
+                } else if (rightDiff < alignmentThreshold) {
+                    createAlignmentGuide('vertical', rightOtherX);
+                    currentPos.x = rightOtherX - currentRect.width;
+                }
+
+                // 检查水平对齐（顶部、中心、底部）
+                const topDiff = Math.abs((currentRect.top - containerRect.top) - pos.y);
+                const centerCurrentY = currentRect.top - containerRect.top + currentRect.height / 2;
+                const centerOtherY = pos.y + otherRect.height / 2;
+                const centerYDiff = Math.abs(centerCurrentY - centerOtherY);
+                const bottomCurrentY = currentRect.bottom - containerRect.top;
+                const bottomOtherY = pos.y + otherRect.height;
+                const bottomDiff = Math.abs(bottomCurrentY - bottomOtherY);
+
+                // 显示水平对齐线
+                if (topDiff < alignmentThreshold) {
+                    createAlignmentGuide('horizontal', pos.y);
+                    currentPos.y = pos.y;
+                } else if (centerYDiff < alignmentThreshold) {
+                    createAlignmentGuide('horizontal', centerOtherY);
+                    currentPos.y = centerOtherY - currentRect.height / 2;
+                } else if (bottomDiff < alignmentThreshold) {
+                    createAlignmentGuide('horizontal', bottomOtherY);
+                    currentPos.y = bottomOtherY - currentRect.height;
+                }
+            });
+        }
+
+        // 创建对齐线
+        function createAlignmentGuide(type, position) {
+            const container = document.getElementById('previewContainer');
+            const guide = document.createElement('div');
+            guide.className = `alignment-guide ${type}`;
+            guide.style[type === 'vertical' ? 'left' : 'top'] = position + 'px';
+            container.appendChild(guide);
+        }
+
+        // 移除对齐线
+        function removeAlignmentGuides() {
+            const guides = document.querySelectorAll('.alignment-guide');
+            guides.forEach(guide => guide.remove());
+        }
+
         // 解析Markdown样式标记并转换为HTML
         function parseTextStyles(text) {
             if (!text) return '';
@@ -2378,25 +2748,31 @@
         // 拖拽移动
         function handleDragMove(e) {
             if (draggedPreviewItem === null) return;
-            
+
             const item = document.querySelector(`[data-item-index="${draggedPreviewItem}"]`);
             if (!item) return;
-            
+
             const container = item.parentElement;
             const containerRect = container.getBoundingClientRect();
-            
+
             let x = e.clientX - containerRect.left - dragOffset.x;
             let y = e.clientY - containerRect.top - dragOffset.y;
-            
+
             // 限制在容器内
             const itemRect = item.getBoundingClientRect();
             x = Math.max(0, Math.min(x, containerRect.width - itemRect.width));
             y = Math.max(0, Math.min(y, containerRect.height - itemRect.height));
-            
+
+            // 显示对齐线并自动对齐
+            const currentPos = { x, y };
+            showAlignmentGuides(item, currentPos);
+            x = currentPos.x;
+            y = currentPos.y;
+
             item.style.left = x + 'px';
             item.style.top = y + 'px';
             item.style.transform = 'none';
-            
+
             // 保存位置
             if (!allVersions[currentVersion].positions) {
                 allVersions[currentVersion].positions = {};
@@ -2413,8 +2789,12 @@
                     item.style.zIndex = '';
                 }
                 draggedPreviewItem = null;
+
+                // 移除对齐线并保存历史记录
+                removeAlignmentGuides();
+                saveHistory();
             }
-            
+
             document.removeEventListener('mousemove', handleDragMove);
             document.removeEventListener('mouseup', stopDrag);
         }
