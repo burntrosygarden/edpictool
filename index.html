@@ -1200,7 +1200,8 @@
         let isRestoringHistory = false;
 
         // 对齐线相关
-        let alignmentThreshold = 10; // 对齐阈值（像素）
+        let alignmentThreshold = 5; // 对齐阈值（像素）
+        let enableAlignmentSnap = false; // 是否启用自动吸附（默认关闭，只显示对齐线）
 
         // 初始化
         function init() {
@@ -2445,6 +2446,12 @@
             const currentRect = currentElement.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
 
+            // 存储最近的对齐位置
+            let nearestVertical = null;
+            let nearestHorizontal = null;
+            let minVerticalDiff = alignmentThreshold;
+            let minHorizontalDiff = alignmentThreshold;
+
             // 检查与其他元素的对齐
             Object.entries(version.positions).forEach(([index, pos]) => {
                 const indexNum = parseInt(index);
@@ -2454,47 +2461,65 @@
                 const otherRect = otherElement.getBoundingClientRect();
 
                 // 检查垂直对齐（左边、中心、右边）
-                const leftDiff = Math.abs((currentRect.left - containerRect.left) - pos.x);
-                const centerCurrentX = currentRect.left - containerRect.left + currentRect.width / 2;
+                const leftDiff = Math.abs(currentPos.x - pos.x);
+                const centerCurrentX = currentPos.x + currentRect.width / 2;
                 const centerOtherX = pos.x + otherRect.width / 2;
                 const centerDiff = Math.abs(centerCurrentX - centerOtherX);
-                const rightCurrentX = currentRect.right - containerRect.left;
+                const rightCurrentX = currentPos.x + currentRect.width;
                 const rightOtherX = pos.x + otherRect.width;
                 const rightDiff = Math.abs(rightCurrentX - rightOtherX);
 
-                // 显示垂直对齐线
-                if (leftDiff < alignmentThreshold) {
-                    createAlignmentGuide('vertical', pos.x);
-                    currentPos.x = pos.x;
-                } else if (centerDiff < alignmentThreshold) {
-                    createAlignmentGuide('vertical', centerOtherX);
-                    currentPos.x = centerOtherX - currentRect.width / 2;
-                } else if (rightDiff < alignmentThreshold) {
-                    createAlignmentGuide('vertical', rightOtherX);
-                    currentPos.x = rightOtherX - currentRect.width;
+                // 找到最近的垂直对齐
+                if (leftDiff < minVerticalDiff) {
+                    minVerticalDiff = leftDiff;
+                    nearestVertical = { type: 'left', position: pos.x, snapX: pos.x };
+                }
+                if (centerDiff < minVerticalDiff) {
+                    minVerticalDiff = centerDiff;
+                    nearestVertical = { type: 'center', position: centerOtherX, snapX: centerOtherX - currentRect.width / 2 };
+                }
+                if (rightDiff < minVerticalDiff) {
+                    minVerticalDiff = rightDiff;
+                    nearestVertical = { type: 'right', position: rightOtherX, snapX: rightOtherX - currentRect.width };
                 }
 
                 // 检查水平对齐（顶部、中心、底部）
-                const topDiff = Math.abs((currentRect.top - containerRect.top) - pos.y);
-                const centerCurrentY = currentRect.top - containerRect.top + currentRect.height / 2;
+                const topDiff = Math.abs(currentPos.y - pos.y);
+                const centerCurrentY = currentPos.y + currentRect.height / 2;
                 const centerOtherY = pos.y + otherRect.height / 2;
                 const centerYDiff = Math.abs(centerCurrentY - centerOtherY);
-                const bottomCurrentY = currentRect.bottom - containerRect.top;
+                const bottomCurrentY = currentPos.y + currentRect.height;
                 const bottomOtherY = pos.y + otherRect.height;
                 const bottomDiff = Math.abs(bottomCurrentY - bottomOtherY);
 
-                // 显示水平对齐线
-                if (topDiff < alignmentThreshold) {
-                    createAlignmentGuide('horizontal', pos.y);
-                    currentPos.y = pos.y;
-                } else if (centerYDiff < alignmentThreshold) {
-                    createAlignmentGuide('horizontal', centerOtherY);
-                    currentPos.y = centerOtherY - currentRect.height / 2;
-                } else if (bottomDiff < alignmentThreshold) {
-                    createAlignmentGuide('horizontal', bottomOtherY);
-                    currentPos.y = bottomOtherY - currentRect.height;
+                // 找到最近的水平对齐
+                if (topDiff < minHorizontalDiff) {
+                    minHorizontalDiff = topDiff;
+                    nearestHorizontal = { type: 'top', position: pos.y, snapY: pos.y };
+                }
+                if (centerYDiff < minHorizontalDiff) {
+                    minHorizontalDiff = centerYDiff;
+                    nearestHorizontal = { type: 'center', position: centerOtherY, snapY: centerOtherY - currentRect.height / 2 };
+                }
+                if (bottomDiff < minHorizontalDiff) {
+                    minHorizontalDiff = bottomDiff;
+                    nearestHorizontal = { type: 'bottom', position: bottomOtherY, snapY: bottomOtherY - currentRect.height };
                 }
             });
+
+            // 显示对齐线，根据设置决定是否吸附
+            if (nearestVertical) {
+                createAlignmentGuide('vertical', nearestVertical.position);
+                if (enableAlignmentSnap) {
+                    currentPos.x = nearestVertical.snapX;
+                }
+            }
+            if (nearestHorizontal) {
+                createAlignmentGuide('horizontal', nearestHorizontal.position);
+                if (enableAlignmentSnap) {
+                    currentPos.y = nearestHorizontal.snapY;
+                }
+            }
         }
 
         // 创建对齐线
@@ -2765,11 +2790,13 @@
             x = Math.max(0, Math.min(x, containerRect.width - itemRect.width));
             y = Math.max(0, Math.min(y, containerRect.height - itemRect.height));
 
-            // 显示对齐线并自动对齐
+            // 显示对齐线，如果启用吸附则自动对齐
             const currentPos = { x, y };
             showAlignmentGuides(item, currentPos);
-            x = currentPos.x;
-            y = currentPos.y;
+            if (enableAlignmentSnap) {
+                x = currentPos.x;
+                y = currentPos.y;
+            }
 
             item.style.left = x + 'px';
             item.style.top = y + 'px';
