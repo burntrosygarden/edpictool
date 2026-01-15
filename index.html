@@ -79,20 +79,144 @@
 
         .app-container {
             display: flex;
-            gap: 20px;
-            max-width: 1600px;
+            gap: 15px;
+            max-width: 100%;
             margin: 0 auto;
+            height: calc(100vh - 120px);
         }
 
-        /* 配置面板 */
-        .config-panel {
-            flex: 0 0 480px;
+        /* 左侧元素列表面板 */
+        .element-list-panel {
+            flex: 0 0 280px;
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .element-list-panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .element-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        /* 中间画布面板 */
+        .canvas-panel {
+            flex: 1;
             background: white;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            max-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 右侧编辑面板 */
+        .edit-panel {
+            flex: 0 0 380px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
+        }
+
+        .edit-panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .edit-panel-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .edit-panel-empty-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        /* 元素列表项 */
+        .element-list-item {
+            background: #f9fafb;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .element-list-item:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .element-list-item.selected {
+            border-color: #3b82f6;
+            background: #dbeafe;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .element-list-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .element-list-item-icon {
+            font-size: 20px;
+        }
+
+        .element-list-item-title {
+            flex: 1;
+            font-weight: 500;
+            font-size: 14px;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .element-list-item-preview {
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .element-list-item-drag {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #999;
+            cursor: move;
+            font-size: 16px;
+        }
+
+        /* 配置面板（保留兼容性） */
+        .config-panel {
+            display: none; /* 旧版配置面板隐藏 */
         }
 
         .config-panel h2 {
@@ -734,6 +858,12 @@
             z-index: 1000;
         }
 
+        .comparison-item.selected {
+            outline: 3px solid #3b82f6;
+            outline-offset: 3px;
+            border-radius: 8px;
+        }
+
         .comparison-item:hover {
             transform: scale(1.02);
         }
@@ -976,6 +1106,57 @@
             transform: scale(1.1);
         }
 
+        /* 折叠区域样式 */
+        .collapsible-section {
+            margin-bottom: 15px;
+        }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .collapsible-header:hover {
+            background: #f3f4f6;
+        }
+
+        .collapsible-header-title {
+            font-weight: 500;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .collapsible-toggle {
+            font-size: 12px;
+            color: #666;
+            transition: transform 0.2s;
+        }
+
+        .collapsible-section.collapsed .collapsible-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s;
+            opacity: 1;
+            padding-top: 12px;
+        }
+
+        .collapsible-section.collapsed .collapsible-content {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+        }
+
         /* 对齐线样式 */
         .alignment-guide {
             position: absolute;
@@ -1067,11 +1248,18 @@
     </div>
 
     <div class="app-container">
-        <!-- 配置面板 -->
-        <div class="config-panel">
-            <h2>配置对比项</h2>
-            
-            <div class="config-name-group">
+        <!-- 左侧：元素列表 -->
+        <div class="element-list-panel">
+            <h2>元素列表</h2>
+            <div class="element-list" id="elementList">
+                <!-- 元素列表项将通过JS生成 -->
+            </div>
+            <button class="btn-add-item" onclick="addItem()">+ 添加元素</button>
+        </div>
+
+        <!-- 中间：画布区域 -->
+        <div class="canvas-panel">
+            <div class="config-name-group" style="margin-bottom: 15px;">
                 <label>配置名称</label>
                 <div class="input-wrapper">
                     <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
@@ -1080,20 +1268,22 @@
                 </div>
             </div>
 
-            <div id="itemsConfig"></div>
-            <button class="btn-add-item" onclick="addItem()">+ 添加对比项</button>
-        </div>
-
-        <!-- 预览面板 -->
-        <div class="preview-panel" style="left: 45px; top: 34px;">
-            <div class="canvas-toolbar">
-                <button class="btn" onclick="addItemFromCanvas()">➕ 添加元素</button>
-            </div>
-            <div class="version-controls">
+            <div class="version-controls" style="margin-bottom: 15px;">
                 <div class="version-buttons" id="versionButtons"></div>
             </div>
-            <div class="comparison-container" id="previewContainer">
-                <div class="empty-state">点击上方"➕ 添加元素"开始创建</div>
+
+            <div class="comparison-container" id="previewContainer" style="flex: 1; position: relative; overflow: auto;">
+                <div class="empty-state">点击左侧"+ 添加元素"开始创建</div>
+            </div>
+        </div>
+
+        <!-- 右侧：编辑面板 -->
+        <div class="edit-panel">
+            <div id="editPanelContent">
+                <div class="edit-panel-empty">
+                    <div class="edit-panel-empty-icon">✏️</div>
+                    <div>选择一个元素开始编辑</div>
+                </div>
             </div>
         </div>
     </div>
@@ -1203,6 +1393,9 @@
         let alignmentThreshold = 5; // 对齐阈值（像素）
         let enableAlignmentSnap = false; // 是否启用自动吸附（默认关闭，只显示对齐线）
 
+        // 选中的元素ID
+        let selectedItemId = null;
+
         // 初始化
         function init() {
             // 尝试从LocalStorage加载
@@ -1261,7 +1454,8 @@
             
             configName = 'Must vs Have to';
             document.getElementById('configName').value = configName;
-            renderConfig();
+            renderElementList();
+            renderEditPanel(null);  // 不自动选中任何元素
             generateAllVersions();
         }
 
@@ -1281,7 +1475,8 @@
 
             document.getElementById('configName').value = configName;
 
-            renderConfig();
+            renderElementList();
+            renderEditPanel(null);  // 不自动选中任何元素
             if (!manualVersions || allVersions.length === 0) {
                 generateAllVersions();
             } else {
@@ -1833,7 +2028,7 @@
                 subtitle: "",
                 color: "#3B82F6",
                 shape: "circle",
-                displayStyle: "icon",
+                displayStyle: "textbox",  // 默认改为文本框样式
                 emojis: [""],
                 boxContent: "",
                 boxStyle: "rounded",
@@ -1844,7 +2039,7 @@
             };
             items.push(newItem);
             saveHistory();
-            renderConfig();
+            selectItem(newItem.id);  // 自动选中新元素
             generateAllVersions();
         }
 
@@ -1852,7 +2047,12 @@
         function deleteItem(id) {
             items = items.filter(item => item.id !== id);
             saveHistory();
-            renderConfig();
+            // 如果删除的是当前选中的元素，清空选择
+            if (selectedItemId === id) {
+                selectedItemId = null;
+            }
+            renderElementList();
+            renderEditPanel(selectedItemId);
             generateAllVersions();
         }
 
@@ -1895,14 +2095,250 @@
                 items.splice(draggedIndex, 1);
                 items.splice(dropIndex, 0, draggedItem);
                 saveHistory();
-                renderConfig();
+                renderElementList();
+                renderEditPanel(selectedItemId);
                 generateAllVersions();
             }
 
             return false;
         }
 
-        // 渲染配置面板
+        // ========== 新UI渲染函数 ==========
+
+        // 选择元素
+        function selectItem(itemId) {
+            selectedItemId = itemId;
+            renderElementList();
+            renderEditPanel(itemId);
+        }
+
+        // 渲染左侧元素列表
+        function renderElementList() {
+            const container = document.getElementById('elementList');
+            container.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'element-list-item';
+                if (item.id === selectedItemId) {
+                    itemDiv.classList.add('selected');
+                }
+                itemDiv.draggable = true;
+                itemDiv.ondragstart = (e) => handleDragStart(e, index);
+                itemDiv.ondragend = handleDragEnd;
+                itemDiv.ondragover = handleDragOver;
+                itemDiv.ondragenter = handleDragEnter;
+                itemDiv.ondragleave = handleDragLeave;
+                itemDiv.ondrop = (e) => handleDrop(e, index);
+                itemDiv.onclick = () => selectItem(item.id);
+
+                const icon = item.displayStyle === 'icon' ? '🎨' : '💬';
+                const title = item.title || item.boxContent || `元素 ${index + 1}`;
+                const preview = item.displayStyle === 'icon'
+                    ? (item.emojis && item.emojis[0] ? item.emojis.filter(e => e).join(' ') : '无emoji')
+                    : (item.boxContent ? item.boxContent.substring(0, 20) + (item.boxContent.length > 20 ? '...' : '') : '空内容');
+
+                itemDiv.innerHTML = `
+                    <div class="element-list-item-drag">☰</div>
+                    <div class="element-list-item-header">
+                        <div class="element-list-item-icon">${icon}</div>
+                        <div class="element-list-item-title">${title}</div>
+                    </div>
+                    <div class="element-list-item-preview">${preview}</div>
+                `;
+                container.appendChild(itemDiv);
+            });
+
+            // 如果没有选中的元素，显示空状态
+            if (items.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">暂无元素</div>';
+            }
+        }
+
+        // 渲染右侧编辑面板
+        function renderEditPanel(itemId) {
+            const container = document.getElementById('editPanelContent');
+
+            if (!itemId) {
+                container.innerHTML = `
+                    <div class="edit-panel-empty">
+                        <div class="edit-panel-empty-icon">✏️</div>
+                        <div>选择一个元素开始编辑</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const index = items.indexOf(item);
+
+            container.innerHTML = `
+                <h2>编辑元素 ${index + 1}</h2>
+
+                <div style="margin-bottom: 15px; display: flex; gap: 8px;">
+                    <button class="btn-duplicate" onclick="duplicateItem(${item.id}); event.stopPropagation();" style="flex: 1;">📋 复制</button>
+                    <button class="btn-delete" onclick="deleteItem(${item.id}); selectItem(null); event.stopPropagation();" style="flex: 1;">删除</button>
+                </div>
+
+                <!-- 基本设置 -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span class="collapsible-header-title">基本设置</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="form-group">
+                            <label>显示样式</label>
+                            <div class="button-group">
+                                <button class="option-btn ${item.displayStyle === 'icon' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'displayStyle', 'icon'); selectItem(${item.id}); generateAllVersions();">
+                                    🎨 图标样式
+                                </button>
+                                <button class="option-btn ${item.displayStyle === 'textbox' ? 'active' : ''}"
+                                        onclick="updateItem(${item.id}, 'displayStyle', 'textbox'); selectItem(${item.id}); generateAllVersions();">
+                                    💬 文本框样式
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>标题（可选）</label>
+                            <div class="input-wrapper">
+                                <input type="text" value="${item.title}" placeholder="留空则不显示标题"
+                                       oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions(); renderElementList();">
+                                <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'title', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>副标题（可选）</label>
+                            <div class="input-wrapper">
+                                <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
+                                       oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions(); renderElementList();">
+                                <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'subtitle', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>背景颜色</label>
+                            <input type="color" value="${item.color}"
+                                   onchange="updateItem(${item.id}, 'color', this.value); generateAllVersions();">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容设置 -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span class="collapsible-header-title">${item.displayStyle === 'icon' ? 'Emoji设置' : '文本框内容'}</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        ${item.displayStyle === 'icon' ? `
+                            <div class="form-group">
+                                <label>Emoji</label>
+                                <div class="emoji-input-group" id="emojis-${item.id}"></div>
+                                <button class="btn-add-emoji" onclick="addEmoji(${item.id})">+ 添加Emoji</button>
+                            </div>
+                        ` : `
+                            <div class="form-group">
+                                <label>文本框内容</label>
+                                <div class="input-wrapper">
+                                    <textarea placeholder="输入文字和emoji" rows="4"
+                                              oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions(); renderElementList();">${item.boxContent}</textarea>
+                                    <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                                </div>
+                                <div class="style-help" style="font-size: 11px; margin-top: 5px;">
+                                    支持Markdown: <code>**粗体**</code> <code>*斜体*</code> <code>~~删除线~~</code> <code>==高亮==</code>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                </div>
+
+                <!-- 高级设置 -->
+                <div class="collapsible-section collapsed">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span class="collapsible-header-title">高级设置</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        ${item.displayStyle === 'icon' ? `
+                            <div class="form-group">
+                                <label>形状</label>
+                                <div class="button-group">
+                                    <button class="option-btn ${item.shape === 'circle' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'shape', 'circle'); generateAllVersions();">
+                                        ⭕ 圆形
+                                    </button>
+                                    <button class="option-btn ${item.shape === 'square' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'shape', 'square'); generateAllVersions();">
+                                        ◻️ 方形
+                                    </button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="form-group">
+                                <label>文本框样式</label>
+                                <div class="button-group">
+                                    <button class="option-btn ${item.boxStyle === 'rounded' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'boxStyle', 'rounded'); generateAllVersions();">
+                                        ▢ 圆角矩形
+                                    </button>
+                                    <button class="option-btn ${item.boxStyle === 'rectangle' ? 'active' : ''}"
+                                            onclick="updateItem(${item.id}, 'boxStyle', 'rectangle'); generateAllVersions();">
+                                        ▭ 长方形
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>框外Emoji</label>
+                                <div class="emoji-input-group" id="external-emojis-${item.id}"></div>
+                                <button class="btn-add-emoji" onclick="addExternalEmoji(${item.id})">+ 添加框外Emoji</button>
+                            </div>
+                            <div class="form-group">
+                                <label>框外Emoji距离：<span id="distance-value-${item.id}">${item.externalEmojiDistance || 65}px</span></label>
+                                <input type="range" min="30" max="150" step="5" value="${item.externalEmojiDistance || 65}"
+                                       style="width: 100%;"
+                                       oninput="updateItem(${item.id}, 'externalEmojiDistance', parseInt(this.value)); document.getElementById('distance-value-${item.id}').textContent = this.value + 'px'; generateAllVersions();">
+                            </div>
+                            <div class="form-group">
+                                <label>装饰Emoji</label>
+                                <div class="emoji-input-group" id="decorative-emojis-${item.id}"></div>
+                                <button class="btn-add-emoji" onclick="addDecorativeEmoji(${item.id})">+ 添加装饰Emoji</button>
+                            </div>
+                        `}
+                        <div class="form-group">
+                            <label>颜色预设</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                ${colorPresets.map(preset => `
+                                    <button class="color-preset-btn"
+                                            style="background: ${preset.bg}; color: ${preset.text}; padding: 4px 8px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;"
+                                            onclick="updateItem(${item.id}, 'color', '${preset.bg}'); selectItem(${item.id}); generateAllVersions();">
+                                        ${preset.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 渲染emoji输入框
+            if (item.displayStyle === 'icon') {
+                renderEmojis(item.id, item.emojis);
+            } else {
+                renderExternalEmojis(item.id, item.externalEmojis || []);
+                renderDecorativeEmojis(item.id, item.decorativeEmojis || []);
+            }
+        }
+
+        // 折叠/展开功能
+        function toggleCollapsible(headerElement) {
+            const section = headerElement.parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        // 渲染配置面板 (旧版，保留用于兼容)
         function renderConfig() {
             const container = document.getElementById('itemsConfig');
             container.innerHTML = '';
@@ -2394,7 +2830,7 @@
             items.push(newItem);
 
             saveHistory();
-            renderConfig();
+            selectItem(newItem.id);  // 自动选中新元素
             generateAllVersions();
         }
 
@@ -2649,7 +3085,22 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'comparison-item draggable';
                 itemDiv.dataset.itemIndex = itemIndex;
-                
+
+                // 添加选中样式
+                if (item.id === selectedItemId) {
+                    itemDiv.classList.add('selected');
+                }
+
+                // 点击元素时选中
+                itemDiv.onclick = (e) => {
+                    if (!e.target.closest('.item-action-btn') && !e.target.closest('button')) {
+                        selectItem(item.id);
+                        // 更新所有画布元素的选中状态
+                        document.querySelectorAll('.comparison-item').forEach(el => el.classList.remove('selected'));
+                        itemDiv.classList.add('selected');
+                    }
+                };
+
                 // 设置位置
                 const pos = positions[itemIndex] || {};
                 if (pos.x !== undefined && pos.y !== undefined) {
