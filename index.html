@@ -1406,8 +1406,8 @@
             <button class="btn btn-history" id="undoBtn" onclick="undo()" disabled>↶ 撤销</button>
             <button class="btn btn-history" id="redoBtn" onclick="redo()" disabled>↷ 重做</button>
             <button class="btn btn-auto-layout" onclick="autoLayout()">✨ 一键排版</button>
-            <button class="btn btn-success" onclick="saveConfig()">💾 保存配置</button>
-            <button class="btn btn-secondary" onclick="loadConfig()">📂 加载配置</button>
+            <button class="btn btn-success" onclick="saveConfig()">💾 保存画布</button>
+            <button class="btn btn-secondary" onclick="loadConfig()">📂 加载画布</button>
             <button class="btn btn-primary" onclick="exportHTML()">📄 导出HTML</button>
             <button class="btn btn-secondary" onclick="exportJSON()">📋 导出JSON</button>
         </div>
@@ -1426,7 +1426,7 @@
         <!-- 中间：画布区域 -->
         <div class="canvas-panel">
             <div class="config-name-group" style="margin-bottom: 15px;">
-                <label>配置名称</label>
+                <label>画布名称</label>
                 <div class="input-wrapper">
                     <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
                            value="" oninput="updateConfigName()">
@@ -1528,7 +1528,7 @@
         let allVersions = [];
         let manualVersions = false; // 是否手动管理模式
 
-        // 配置名称
+        // 画布名称
         let configName = '';
 
         // 拖拽相关
@@ -1574,7 +1574,7 @@
                     const config = JSON.parse(savedConfig);
                     loadConfigData(config);
                 } catch (e) {
-                    console.error('加载配置失败:', e);
+                    console.error('加载画布失败:', e);
                     loadDefaultConfig();
                 }
             } else {
@@ -1628,9 +1628,9 @@
             generateAllVersions();
         }
 
-        // 加载配置数据
+        // 加载画布数据
         function loadConfigData(config) {
-            configName = config.name || '未命名配置';
+            configName = config.name || '未命名画布';
             items = config.items || [];
 
             // 加载版本信息
@@ -1653,13 +1653,13 @@
             }
         }
 
-        // 更新配置名称
+        // 更新画布名称
         function updateConfigName() {
             const inputValue = document.getElementById('configName').value;
             if (inputValue) {
                 configName = inputValue;
             } else {
-                // 如果配置名称为空，使用第一个文本框的内容
+                // 如果画布名称为空，使用第一个文本框的内容
                 const firstTextBox = items.find(item => item.displayStyle === 'textbox' && item.boxContent);
                 if (firstTextBox && firstTextBox.boxContent) {
                     // 去除Markdown标记，只保留纯文本
@@ -1673,16 +1673,16 @@
                         .replace(/\[highlight:[^\]]+\](.*?)\[\/highlight\]/g, '$1')
                         .replace(/\[style:[^\]]+\](.*?)\[\/style\]/g, '$1')
                         .trim();
-                    configName = plainText.substring(0, 30) || '未命名配置'; // 限制长度
+                    configName = plainText.substring(0, 30) || '未命名画布'; // 限制长度
                 } else {
-                    configName = '未命名配置';
+                    configName = '未命名画布';
                 }
             }
         }
 
-        // 保存配置
+        // 保存画布
         function saveConfig() {
-            // 确保配置名称是最新的
+            // 确保画布名称是最新的
             updateConfigName();
 
             const config = {
@@ -1698,7 +1698,7 @@
             localStorage.setItem('comparisonConfig', JSON.stringify(config));
         }
 
-        // 加载配置
+        // 加载画布
         function loadConfig() {
             document.getElementById('fileInput').click();
         }
@@ -1723,7 +1723,7 @@
 
         // 导出HTML
         function exportHTML() {
-            // 确保配置名称是最新的
+            // 确保画布名称是最新的
             updateConfigName();
 
             const htmlContent = generateStandaloneHTML();
@@ -1946,7 +1946,7 @@
 
         // 导出JSON
         function exportJSON() {
-            // 确保配置名称是最新的
+            // 确保画布名称是最新的
             updateConfigName();
 
             const config = {
