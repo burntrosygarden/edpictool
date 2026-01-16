@@ -160,7 +160,7 @@
             border-radius: 6px;
             padding: 6px 8px;
             margin-bottom: 4px;
-            cursor: pointer;
+            cursor: move;
             transition: all 0.2s;
             position: relative;
             display: flex;
@@ -181,13 +181,6 @@
             border-color: #3b82f6;
             background: #dbeafe;
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-        }
-
-        .element-list-item-drag {
-            color: #999;
-            cursor: move;
-            font-size: 14px;
-            flex-shrink: 0;
         }
 
         .element-list-item-icon {
@@ -2339,7 +2332,6 @@
                     : (item.boxContent ? stripMarkdown(item.boxContent).substring(0, 15) + (stripMarkdown(item.boxContent).length > 15 ? '...' : '') : '空内容');
 
                 itemDiv.innerHTML = `
-                    <div class="element-list-item-drag">☰</div>
                     <div class="element-list-item-icon">${icon}</div>
                     <div class="element-list-item-content">
                         <div class="element-list-item-title">${title}</div>
