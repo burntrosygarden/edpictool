@@ -158,16 +158,23 @@
             background: #f9fafb;
             border: 2px solid #e5e5e5;
             border-radius: 6px;
-            padding: 8px 10px;
-            margin-bottom: 6px;
+            padding: 6px 8px;
+            margin-bottom: 4px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .element-list-item:hover {
             border-color: #3b82f6;
             background: #eff6ff;
+        }
+
+        .element-list-item:hover .element-list-item-delete {
+            opacity: 1;
         }
 
         .element-list-item.selected {
@@ -176,42 +183,60 @@
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
         }
 
-        .element-list-item-header {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 4px;
+        .element-list-item-drag {
+            color: #999;
+            cursor: move;
+            font-size: 14px;
+            flex-shrink: 0;
         }
 
         .element-list-item-icon {
-            font-size: 18px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .element-list-item-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .element-list-item-title {
-            flex: 1;
             font-weight: 500;
-            font-size: 13px;
+            font-size: 12px;
             color: #333;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            flex-shrink: 1;
         }
 
         .element-list-item-preview {
-            font-size: 11px;
-            color: #666;
+            font-size: 10px;
+            color: #999;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            flex-shrink: 2;
         }
 
-        .element-list-item-drag {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            color: #999;
-            cursor: move;
-            font-size: 14px;
+        .element-list-item-delete {
+            color: #ef4444;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .element-list-item-delete:hover {
+            background: #fee2e2;
         }
 
         /* 配置面板（保留兼容性） */
@@ -2311,16 +2336,27 @@
                 const title = stripMarkdown(rawTitle);
                 const preview = item.displayStyle === 'icon'
                     ? (item.emojis && item.emojis[0] ? item.emojis.filter(e => e).join(' ') : '无emoji')
-                    : (item.boxContent ? stripMarkdown(item.boxContent).substring(0, 20) + (stripMarkdown(item.boxContent).length > 20 ? '...' : '') : '空内容');
+                    : (item.boxContent ? stripMarkdown(item.boxContent).substring(0, 15) + (stripMarkdown(item.boxContent).length > 15 ? '...' : '') : '空内容');
 
                 itemDiv.innerHTML = `
                     <div class="element-list-item-drag">☰</div>
-                    <div class="element-list-item-header">
-                        <div class="element-list-item-icon">${icon}</div>
+                    <div class="element-list-item-icon">${icon}</div>
+                    <div class="element-list-item-content">
                         <div class="element-list-item-title">${title}</div>
+                        <div class="element-list-item-preview">${preview}</div>
                     </div>
-                    <div class="element-list-item-preview">${preview}</div>
+                    <div class="element-list-item-delete" data-item-id="${item.id}">×</div>
                 `;
+
+                // 添加删除按钮事件
+                const deleteBtn = itemDiv.querySelector('.element-list-item-delete');
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm('确定要删除这个元素吗？')) {
+                        deleteItem(item.id);
+                    }
+                };
+
                 container.appendChild(itemDiv);
             });
 
