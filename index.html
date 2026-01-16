@@ -2511,7 +2511,7 @@
                             </div>
                         `}
                         <div class="form-group">
-                            <label>颜色预设</label>
+                            <label>背景颜色</label>
                             <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                                 ${colorPresets.map(preset => `
                                     <button class="color-preset-btn"
@@ -2596,8 +2596,8 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>颜色预设</label>
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                        <label>背景颜色</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                             ${colorPresets.map(preset => `
                                 <button class="color-preset-btn"
                                         style="background: ${preset.bg}; color: ${preset.text}; padding: 6px 12px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;"
@@ -2606,9 +2606,6 @@
                                 </button>
                             `).join('')}
                         </div>
-                        <label>自定义颜色</label>
-                        <input type="color" value="${item.color}"
-                               onchange="updateItem(${item.id}, 'color', this.value); generateAllVersions();">
                     </div>
                     ${item.displayStyle === 'icon' ? `
                         <div class="form-group">
@@ -3867,8 +3864,8 @@
                            data-field="subtitle">
                 </div>
                 <div class="form-group">
-                    <label>颜色预设</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                    <label>背景颜色</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         ${colorPresets.map(preset => `
                             <button class="color-preset-btn"
                                     style="background: ${preset.bg}; color: ${preset.text}; padding: 6px 12px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;"
@@ -3877,9 +3874,6 @@
                             </button>
                         `).join('')}
                     </div>
-                    <label>自定义颜色</label>
-                    <input type="color" value="${item.color}"
-                           data-field="color">
                 </div>
                 ${item.displayStyle === 'icon' ? `
                     <div class="form-group">
