@@ -608,6 +608,35 @@
             transform: scale(1.1);
         }
 
+        /* 文本样式工具栏 */
+        .text-toolbar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .toolbar-btn:hover {
+            background: #e5e7eb;
+            border-color: #3b82f6;
+        }
+
+        .toolbar-btn:active {
+            background: #d1d5db;
+        }
+
         /* 预览面板 */
         .preview-panel {
             flex: 1;
@@ -2232,6 +2261,57 @@
             generateAllVersions();
         }
 
+        // 插入Markdown样式
+        function insertMarkdown(itemId, style) {
+            const textarea = document.getElementById(`textarea-${itemId}`);
+            if (!textarea) return;
+
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const beforeText = textarea.value.substring(0, start);
+            const afterText = textarea.value.substring(end);
+
+            let wrappedText = '';
+            let cursorOffset = 0;
+
+            switch(style) {
+                case 'bold':
+                    wrappedText = `**${selectedText || '文字'}**`;
+                    cursorOffset = selectedText ? 0 : -2;
+                    break;
+                case 'italic':
+                    wrappedText = `*${selectedText || '文字'}*`;
+                    cursorOffset = selectedText ? 0 : -1;
+                    break;
+                case 'strikethrough':
+                    wrappedText = `~~${selectedText || '文字'}~~`;
+                    cursorOffset = selectedText ? 0 : -2;
+                    break;
+                case 'highlight':
+                    wrappedText = `==${selectedText || '文字'}==`;
+                    cursorOffset = selectedText ? 0 : -2;
+                    break;
+                case 'stroke':
+                    wrappedText = `[stroke]${selectedText || '文字'}[/stroke]`;
+                    cursorOffset = selectedText ? 0 : -9;
+                    break;
+            }
+
+            const newText = beforeText + wrappedText + afterText;
+            textarea.value = newText;
+
+            // 更新数据
+            updateItem(itemId, 'boxContent', newText);
+            renderElementList();
+            generateAllVersions();
+
+            // 设置光标位置
+            const newCursorPos = start + wrappedText.length + cursorOffset;
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+        }
+
         // 拖拽功能
         function handleDragStart(e, index) {
             draggedElement = e.currentTarget;
@@ -2414,13 +2494,17 @@
                         ` : `
                             <div class="form-group">
                                 <label>文本框内容</label>
+                                <div class="text-toolbar">
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'bold')" title="加粗">B</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'italic')" title="斜体" style="font-style: italic;">I</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'strikethrough')" title="删除线" style="text-decoration: line-through;">S</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight')" title="高亮" style="background: #fef08a;">H</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'stroke')" title="描边">描边</button>
+                                </div>
                                 <div class="input-wrapper">
-                                    <textarea placeholder="输入文字和emoji" rows="4"
+                                    <textarea id="textarea-${item.id}" placeholder="输入文字和emoji" rows="4"
                                               oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions(); renderElementList();">${item.boxContent}</textarea>
                                     <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
-                                </div>
-                                <div class="style-help" style="font-size: 11px; margin-top: 5px;">
-                                    支持Markdown: <code>**粗体**</code> <code>*斜体*</code> <code>~~删除线~~</code> <code>==高亮==</code>
                                 </div>
                             </div>
                         `}
@@ -2507,18 +2591,6 @@
                                 <button class="btn-add-emoji" onclick="addDecorativeEmoji(${item.id})">+ 添加装饰Emoji</button>
                             </div>
                         `}
-                        <div class="form-group">
-                            <label>背景颜色</label>
-                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                ${colorPresets.map(preset => `
-                                    <button class="color-preset-btn"
-                                            style="background: ${preset.bg}; color: ${preset.text}; padding: 4px 8px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;"
-                                            onclick="updateItem(${item.id}, 'color', '${preset.bg}'); selectItem(${item.id}); generateAllVersions();">
-                                        ${preset.name}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
                     </div>
                 </div>
             `;
