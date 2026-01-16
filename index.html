@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教学视觉对比图生成器</title>
+    <title>有限元素画布</title>
     <style>
         * {
             margin: 0;
@@ -157,17 +157,24 @@
         .element-list-item {
             background: #f9fafb;
             border: 2px solid #e5e5e5;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            cursor: pointer;
+            border-radius: 6px;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            cursor: move;
             transition: all 0.2s;
             position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .element-list-item:hover {
             border-color: #3b82f6;
             background: #eff6ff;
+        }
+
+        .element-list-item:hover .element-list-item-delete {
+            opacity: 1;
         }
 
         .element-list-item.selected {
@@ -176,42 +183,53 @@
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
         }
 
-        .element-list-item-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
+        .element-list-item-icon {
+            font-size: 16px;
+            flex-shrink: 0;
         }
 
-        .element-list-item-icon {
-            font-size: 20px;
+        .element-list-item-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .element-list-item-title {
-            flex: 1;
             font-weight: 500;
-            font-size: 14px;
+            font-size: 12px;
             color: #333;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            flex-shrink: 1;
         }
 
         .element-list-item-preview {
-            font-size: 12px;
-            color: #666;
+            font-size: 10px;
+            color: #999;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            flex-shrink: 2;
         }
 
-        .element-list-item-drag {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            color: #999;
-            cursor: move;
+        .element-list-item-delete {
+            color: #ef4444;
             font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .element-list-item-delete:hover {
+            background: #fee2e2;
         }
 
         /* 配置面板（保留兼容性） */
@@ -590,6 +608,83 @@
             transform: scale(1.1);
         }
 
+        /* 文本样式工具栏 */
+        .text-toolbar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .toolbar-btn:hover {
+            background: #e5e7eb;
+            border-color: #3b82f6;
+        }
+
+        .toolbar-btn:active {
+            background: #d1d5db;
+        }
+
+        /* 富文本编辑器 */
+        .rich-text-editor {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            line-height: 1.6;
+            outline: none;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .rich-text-editor:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .rich-text-editor:empty:before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        .rich-text-editor strong {
+            font-weight: 700;
+        }
+
+        .rich-text-editor em {
+            font-style: italic;
+        }
+
+        .rich-text-editor s {
+            text-decoration: line-through;
+        }
+
+        .rich-text-editor .highlight {
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .rich-text-editor .stroke-text {
+            -webkit-text-stroke: 2px #000000;
+            paint-order: stroke fill;
+        }
+
         /* 预览面板 */
         .preview-panel {
             flex: 1;
@@ -816,22 +911,33 @@
         .floating-editor {
             display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 20px;
+            right: 20px;
+            bottom: 20px;
+            transform: translateX(0);
             background: white;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             z-index: 2000;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
+            width: 400px;
+            max-height: calc(100vh - 40px);
             overflow-y: auto;
+            transition: transform 0.3s ease;
         }
 
         .floating-editor.show {
             display: block;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
         }
 
         .floating-editor-header {
@@ -871,8 +977,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.2);
             z-index: 1999;
+            pointer-events: none;
         }
 
         .floating-editor-overlay.show {
@@ -972,7 +1079,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 0;
             position: absolute;
             min-width: 200px;
             max-width: 350px;
@@ -1116,13 +1223,14 @@
 
         .text-content {
             text-align: center;
+            margin-top: -8px;
         }
 
         .title {
             font-size: 32px;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .subtitle {
@@ -1370,13 +1478,13 @@
 </head>
 <body>
     <div class="app-header">
-        <h1>📚 教学视觉对比图生成器</h1>
+        <h1>🎨 有限元素画布</h1>
         <div class="header-actions">
             <button class="btn btn-history" id="undoBtn" onclick="undo()" disabled>↶ 撤销</button>
             <button class="btn btn-history" id="redoBtn" onclick="redo()" disabled>↷ 重做</button>
             <button class="btn btn-auto-layout" onclick="autoLayout()">✨ 一键排版</button>
-            <button class="btn btn-success" onclick="saveConfig()">💾 保存配置</button>
-            <button class="btn btn-secondary" onclick="loadConfig()">📂 加载配置</button>
+            <button class="btn btn-success" onclick="saveConfig()">💾 保存画布</button>
+            <button class="btn btn-secondary" onclick="loadConfig()">📂 加载画布</button>
             <button class="btn btn-primary" onclick="exportHTML()">📄 导出HTML</button>
             <button class="btn btn-secondary" onclick="exportJSON()">📋 导出JSON</button>
         </div>
@@ -1395,16 +1503,12 @@
         <!-- 中间：画布区域 -->
         <div class="canvas-panel">
             <div class="config-name-group" style="margin-bottom: 15px;">
-                <label>配置名称</label>
+                <label>画布名称</label>
                 <div class="input-wrapper">
                     <input type="text" id="configName" placeholder="留空自动使用第一个文本框内容"
                            value="" oninput="updateConfigName()">
                     <button class="btn-clear-input" type="button" onclick="document.getElementById('configName').value = ''; updateConfigName();">×</button>
                 </div>
-            </div>
-
-            <div class="version-controls" style="margin-bottom: 15px;">
-                <div class="version-buttons" id="versionButtons"></div>
             </div>
 
             <div class="comparison-container" id="previewContainer" style="flex: 1; position: relative; overflow: auto;">
@@ -1501,7 +1605,7 @@
         let allVersions = [];
         let manualVersions = false; // 是否手动管理模式
 
-        // 配置名称
+        // 画布名称
         let configName = '';
 
         // 拖拽相关
@@ -1547,7 +1651,7 @@
                     const config = JSON.parse(savedConfig);
                     loadConfigData(config);
                 } catch (e) {
-                    console.error('加载配置失败:', e);
+                    console.error('加载画布失败:', e);
                     loadDefaultConfig();
                 }
             } else {
@@ -1601,9 +1705,9 @@
             generateAllVersions();
         }
 
-        // 加载配置数据
+        // 加载画布数据
         function loadConfigData(config) {
-            configName = config.name || '未命名配置';
+            configName = config.name || '未命名画布';
             items = config.items || [];
 
             // 加载版本信息
@@ -1626,13 +1730,13 @@
             }
         }
 
-        // 更新配置名称
+        // 更新画布名称
         function updateConfigName() {
             const inputValue = document.getElementById('configName').value;
             if (inputValue) {
                 configName = inputValue;
             } else {
-                // 如果配置名称为空，使用第一个文本框的内容
+                // 如果画布名称为空，使用第一个文本框的内容
                 const firstTextBox = items.find(item => item.displayStyle === 'textbox' && item.boxContent);
                 if (firstTextBox && firstTextBox.boxContent) {
                     // 去除Markdown标记，只保留纯文本
@@ -1646,16 +1750,16 @@
                         .replace(/\[highlight:[^\]]+\](.*?)\[\/highlight\]/g, '$1')
                         .replace(/\[style:[^\]]+\](.*?)\[\/style\]/g, '$1')
                         .trim();
-                    configName = plainText.substring(0, 30) || '未命名配置'; // 限制长度
+                    configName = plainText.substring(0, 30) || '未命名画布'; // 限制长度
                 } else {
-                    configName = '未命名配置';
+                    configName = '未命名画布';
                 }
             }
         }
 
-        // 保存配置
+        // 保存画布
         function saveConfig() {
-            // 确保配置名称是最新的
+            // 确保画布名称是最新的
             updateConfigName();
 
             const config = {
@@ -1671,7 +1775,7 @@
             localStorage.setItem('comparisonConfig', JSON.stringify(config));
         }
 
-        // 加载配置
+        // 加载画布
         function loadConfig() {
             document.getElementById('fileInput').click();
         }
@@ -1696,7 +1800,7 @@
 
         // 导出HTML
         function exportHTML() {
-            // 确保配置名称是最新的
+            // 确保画布名称是最新的
             updateConfigName();
 
             const htmlContent = generateStandaloneHTML();
@@ -1718,6 +1822,7 @@
             let itemsHTML = '';
             const hasTitle = items.some(it => it.title || it.subtitle);
             const horizontalSpacing = hasTitle ? 280 : 220;
+            const layoutClass = ''; // 使用绝对定位布局
 
             items.forEach((item, itemIndex) => {
                 const emoji = combination[itemIndex] || '';
@@ -1763,7 +1868,7 @@
 
                     const decorativeEmojis = item.decorativeEmojis || [];
                     const decorativeEmojisHTML = decorativeEmojis.map(deco => `
-                        <span class="decorative-emoji" style="position: absolute; left: ${deco.x}%; top: ${deco.y}%; transform: translate(-50%, -50%); font-size: ${deco.fontSize || 32}px; cursor: default; user-select: none; pointer-events: none;">
+                        <span class="decorative-emoji" style="position: absolute; left: ${deco.x}px; top: ${deco.y}px; font-size: ${deco.fontSize || 32}px; cursor: default; user-select: none; pointer-events: none;">
                             ${deco.emoji}
                         </span>
                     `).join('');
@@ -1821,7 +1926,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 0;
             min-width: 200px;
             max-width: 350px;
             position: absolute;
@@ -1888,7 +1993,10 @@
             font-size: 32px;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 8px;
+            margin-bottom: 2px;
+        }
+        .title:last-child {
+            margin-bottom: 0;
         }
         .subtitle {
             font-size: 20px;
@@ -1915,7 +2023,7 @@
 
         // 导出JSON
         function exportJSON() {
-            // 确保配置名称是最新的
+            // 确保画布名称是最新的
             updateConfigName();
 
             const config = {
@@ -2201,6 +2309,170 @@
             generateAllVersions();
         }
 
+        // HTML转Markdown（改进版，支持嵌套标签）
+        function htmlToMarkdown(html) {
+            if (!html) return '';
+
+            let text = html;
+
+            // 处理换行和空格
+            text = text.replace(/<br\s*\/?>/gi, '\n');
+            text = text.replace(/<\/div><div>/gi, '\n');
+            text = text.replace(/<div>/gi, '');
+            text = text.replace(/<\/div>/gi, '\n');
+            text = text.replace(/&nbsp;/g, ' ');
+
+            // 处理格式化标签（从内到外，支持嵌套）
+            // 使用多次迭代处理嵌套标签
+            let maxIterations = 10;
+            let iteration = 0;
+            while ((text.includes('<') && text.includes('>')) && iteration < maxIterations) {
+                let changed = false;
+
+                // 高亮（优先处理，因为最外层）
+                if (text.match(/<span class="highlight" style="background-color:\s*([^;"]+);?">(.*?)<\/span>/)) {
+                    text = text.replace(/<span class="highlight" style="background-color:\s*([^;"]+);?">(.*?)<\/span>/g, '[highlight:$1]$2[/highlight]');
+                    changed = true;
+                }
+
+                // 描边
+                if (text.match(/<span class="stroke-text">(.*?)<\/span>/)) {
+                    text = text.replace(/<span class="stroke-text">(.*?)<\/span>/g, '[stroke]$1[/stroke]');
+                    changed = true;
+                }
+
+                // 粗体
+                if (text.match(/<(strong|b)>(.*?)<\/(strong|b)>/)) {
+                    text = text.replace(/<strong>(.*?)<\/strong>/g, '**$1**');
+                    text = text.replace(/<b>(.*?)<\/b>/g, '**$1**');
+                    changed = true;
+                }
+
+                // 斜体
+                if (text.match(/<(em|i)>(.*?)<\/(em|i)>/)) {
+                    text = text.replace(/<em>(.*?)<\/em>/g, '*$1*');
+                    text = text.replace(/<i>(.*?)<\/i>/g, '*$1*');
+                    changed = true;
+                }
+
+                // 删除线
+                if (text.match(/<s>(.*?)<\/s>/)) {
+                    text = text.replace(/<s>(.*?)<\/s>/g, '~~$1~~');
+                    changed = true;
+                }
+
+                if (!changed) break;
+                iteration++;
+            }
+
+            // HTML实体解码
+            text = text.replace(/&lt;/g, '<');
+            text = text.replace(/&gt;/g, '>');
+            text = text.replace(/&amp;/g, '&');
+            text = text.replace(/&quot;/g, '"');
+
+            return text.trim();
+        }
+
+        // Markdown转HTML（用于显示）
+        function markdownToHtml(markdown) {
+            if (!markdown) return '';
+
+            let html = markdown;
+
+            // 转义HTML
+            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Markdown到HTML
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            html = html.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+            html = html.replace(/\[highlight:([^\]]+)\](.*?)\[\/highlight\]/g, '<span class="highlight" style="background-color: $1;">$2</span>');
+            html = html.replace(/\[stroke\](.*?)\[\/stroke\]/g, '<span class="stroke-text">$1</span>');
+            html = html.replace(/\n/g, '<br>');
+
+            return html;
+        }
+
+        // 应用富文本样式（支持toggle）
+        function applyRichTextStyle(itemId, style, color = null) {
+            const editor = document.getElementById(`editor-${itemId}`);
+            if (!editor) return;
+
+            editor.focus();
+
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+
+            switch(style) {
+                case 'bold':
+                    document.execCommand('bold', false, null);
+                    break;
+                case 'italic':
+                    document.execCommand('italic', false, null);
+                    break;
+                case 'strikethrough':
+                    document.execCommand('strikeThrough', false, null);
+                    break;
+                case 'highlight':
+                    if (color) {
+                        // 检查选中的内容是否已经有高亮
+                        const parentElement = range.commonAncestorContainer.parentElement;
+                        if (parentElement && parentElement.classList && parentElement.classList.contains('highlight')) {
+                            // 移除高亮：提取内容并替换父元素
+                            const content = parentElement.textContent;
+                            const textNode = document.createTextNode(content);
+                            parentElement.parentNode.replaceChild(textNode, parentElement);
+                        } else {
+                            // 添加高亮
+                            const span = document.createElement('span');
+                            span.className = 'highlight';
+                            span.style.backgroundColor = color;
+
+                            try {
+                                range.surroundContents(span);
+                            } catch(e) {
+                                // 如果选中跨越多个元素，使用另一种方法
+                                const fragment = range.extractContents();
+                                span.appendChild(fragment);
+                                range.insertNode(span);
+                            }
+                        }
+                    }
+                    break;
+                case 'stroke':
+                    // 检查选中的内容是否已经有描边
+                    const parentElement = range.commonAncestorContainer.parentElement;
+                    if (parentElement && parentElement.classList && parentElement.classList.contains('stroke-text')) {
+                        // 移除描边
+                        const content = parentElement.textContent;
+                        const textNode = document.createTextNode(content);
+                        parentElement.parentNode.replaceChild(textNode, parentElement);
+                    } else {
+                        // 添加描边
+                        const span = document.createElement('span');
+                        span.className = 'stroke-text';
+
+                        try {
+                            range.surroundContents(span);
+                        } catch(e) {
+                            const fragment = range.extractContents();
+                            span.appendChild(fragment);
+                            range.insertNode(span);
+                        }
+                    }
+                    break;
+            }
+
+            // 更新内容
+            const markdown = htmlToMarkdown(editor.innerHTML);
+            updateItem(itemId, 'boxContent', markdown);
+            renderElementList();
+            generateAllVersions();
+        }
+
         // 拖拽功能
         function handleDragStart(e, index) {
             draggedElement = e.currentTarget;
@@ -2257,6 +2529,22 @@
             renderEditPanel(itemId);
         }
 
+        // 清理markdown语法，只保留纯文本
+        function stripMarkdown(text) {
+            if (!text) return '';
+            return text
+                .replace(/\*\*([^*]+)\*\*/g, '$1')  // 加粗
+                .replace(/\*([^*]+)\*/g, '$1')      // 斜体
+                .replace(/~~([^~]+)~~/g, '$1')      // 删除线
+                .replace(/==([^=]+)==/g, '$1')      // 高亮
+                .replace(/\[stroke\](.*?)\[\/stroke\]/g, '$1')  // 描边
+                .replace(/\[color:[^\]]+\](.*?)\[\/color\]/g, '$1')  // 颜色
+                .replace(/\[highlight:[^\]]+\](.*?)\[\/highlight\]/g, '$1')  // 高亮色
+                .replace(/\[style:[^\]]+\](.*?)\[\/style\]/g, '$1')  // 自定义样式
+                .replace(/`([^`]+)`/g, '$1')  // 代码
+                .trim();
+        }
+
         // 渲染左侧元素列表
         function renderElementList() {
             const container = document.getElementById('elementList');
@@ -2278,19 +2566,30 @@
                 itemDiv.onclick = () => selectItem(item.id);
 
                 const icon = item.displayStyle === 'icon' ? '🎨' : '💬';
-                const title = item.title || item.boxContent || `元素 ${index + 1}`;
+                const rawTitle = item.title || item.boxContent || `元素 ${index + 1}`;
+                const title = stripMarkdown(rawTitle);
                 const preview = item.displayStyle === 'icon'
                     ? (item.emojis && item.emojis[0] ? item.emojis.filter(e => e).join(' ') : '无emoji')
-                    : (item.boxContent ? item.boxContent.substring(0, 20) + (item.boxContent.length > 20 ? '...' : '') : '空内容');
+                    : (item.boxContent ? stripMarkdown(item.boxContent).substring(0, 15) + (stripMarkdown(item.boxContent).length > 15 ? '...' : '') : '空内容');
 
                 itemDiv.innerHTML = `
-                    <div class="element-list-item-drag">☰</div>
-                    <div class="element-list-item-header">
-                        <div class="element-list-item-icon">${icon}</div>
+                    <div class="element-list-item-icon">${icon}</div>
+                    <div class="element-list-item-content">
                         <div class="element-list-item-title">${title}</div>
+                        <div class="element-list-item-preview">${preview}</div>
                     </div>
-                    <div class="element-list-item-preview">${preview}</div>
+                    <div class="element-list-item-delete" data-item-id="${item.id}">×</div>
                 `;
+
+                // 添加删除按钮事件
+                const deleteBtn = itemDiv.querySelector('.element-list-item-delete');
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm('确定要删除这个元素吗？')) {
+                        deleteItem(item.id);
+                    }
+                };
+
                 container.appendChild(itemDiv);
             });
 
@@ -2347,6 +2646,47 @@
                                 </button>
                             </div>
                         </div>
+                        ${item.displayStyle === 'icon' ? `
+                            <div class="form-group">
+                                <label>Emoji</label>
+                                <div class="emoji-input-group" id="emojis-${item.id}"></div>
+                                <button class="btn-add-emoji" onclick="addEmoji(${item.id})">+ 添加Emoji</button>
+                            </div>
+                        ` : `
+                            <div class="form-group">
+                                <label>文本框内容</label>
+                                <div class="text-toolbar">
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'bold')" title="加粗" style="font-weight: bold;">B</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'italic')" title="斜体" style="font-style: italic;">I</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'strikethrough')" title="删除线" style="text-decoration: line-through;">S</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#ffff00')" title="黄色高亮" style="background: #fef08a;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#ff0000')" title="红色高亮" style="background: #fecaca; color: #991b1b;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#00ff00')" title="绿色高亮" style="background: #bbf7d0; color: #166534;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#00bfff')" title="蓝色高亮" style="background: #bfdbfe; color: #1e40af;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'stroke')" title="描边">描边</button>
+                                </div>
+                                <div class="input-wrapper" style="position: relative;">
+                                    <div id="editor-${item.id}"
+                                         class="rich-text-editor"
+                                         contenteditable="true"
+                                         placeholder="输入文字和emoji"
+                                         oninput="updateItem(${item.id}, 'boxContent', htmlToMarkdown(this.innerHTML)); renderElementList();">${markdownToHtml(item.boxContent)}</div>
+                                    <button class="btn-clear-input" type="button" style="position: absolute; top: 8px; right: 8px;" onclick="document.getElementById('editor-${item.id}').innerHTML = ''; updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                                </div>
+                            </div>
+                        `}
+                        <div class="form-group">
+                            <label>背景颜色</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                ${colorPresets.map(preset => `
+                                    <button class="color-preset-btn"
+                                            style="background: ${preset.bg}; color: ${preset.text}; padding: 4px 8px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;"
+                                            onclick="updateItem(${item.id}, 'color', '${preset.bg}'); selectItem(${item.id}); generateAllVersions();">
+                                        ${preset.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label>标题（可选）</label>
                             <div class="input-wrapper">
@@ -2363,40 +2703,6 @@
                                 <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'subtitle', ''); selectItem(${item.id}); generateAllVersions();">×</button>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>背景颜色</label>
-                            <input type="color" value="${item.color}"
-                                   onchange="updateItem(${item.id}, 'color', this.value); generateAllVersions();">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 内容设置 -->
-                <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                        <span class="collapsible-header-title">${item.displayStyle === 'icon' ? 'Emoji设置' : '文本框内容'}</span>
-                        <span class="collapsible-toggle">▼</span>
-                    </div>
-                    <div class="collapsible-content">
-                        ${item.displayStyle === 'icon' ? `
-                            <div class="form-group">
-                                <label>Emoji</label>
-                                <div class="emoji-input-group" id="emojis-${item.id}"></div>
-                                <button class="btn-add-emoji" onclick="addEmoji(${item.id})">+ 添加Emoji</button>
-                            </div>
-                        ` : `
-                            <div class="form-group">
-                                <label>文本框内容</label>
-                                <div class="input-wrapper">
-                                    <textarea placeholder="输入文字和emoji" rows="4"
-                                              oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions(); renderElementList();">${item.boxContent}</textarea>
-                                    <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
-                                </div>
-                                <div class="style-help" style="font-size: 11px; margin-top: 5px;">
-                                    支持Markdown: <code>**粗体**</code> <code>*斜体*</code> <code>~~删除线~~</code> <code>==高亮==</code>
-                                </div>
-                            </div>
-                        `}
                     </div>
                 </div>
 
@@ -2452,18 +2758,6 @@
                                 <button class="btn-add-emoji" onclick="addDecorativeEmoji(${item.id})">+ 添加装饰Emoji</button>
                             </div>
                         `}
-                        <div class="form-group">
-                            <label>颜色预设</label>
-                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                ${colorPresets.map(preset => `
-                                    <button class="color-preset-btn"
-                                            style="background: ${preset.bg}; color: ${preset.text}; padding: 4px 8px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;"
-                                            onclick="updateItem(${item.id}, 'color', '${preset.bg}'); selectItem(${item.id}); generateAllVersions();">
-                                        ${preset.name}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -2538,8 +2832,8 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>颜色预设</label>
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                        <label>背景颜色</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                             ${colorPresets.map(preset => `
                                 <button class="color-preset-btn"
                                         style="background: ${preset.bg}; color: ${preset.text}; padding: 6px 12px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;"
@@ -2548,9 +2842,6 @@
                                 </button>
                             `).join('')}
                         </div>
-                        <label>自定义颜色</label>
-                        <input type="color" value="${item.color}"
-                               onchange="updateItem(${item.id}, 'color', this.value); generateAllVersions();">
                     </div>
                     ${item.displayStyle === 'icon' ? `
                         <div class="form-group">
@@ -2963,15 +3254,20 @@
             newItem.id = Date.now();
 
             // 如果有位置信息，稍微偏移
-            const version = allVersions[currentVersion];
-            if (version && version.positions) {
-                const oldPos = version.positions[items.indexOf(item)];
+            if (allVersions[currentVersion] && allVersions[currentVersion].positions) {
+                const oldItemIndex = items.indexOf(item);
+                const oldPos = allVersions[currentVersion].positions[oldItemIndex];
                 if (oldPos) {
-                    // 在当前版本的positions中添加新位置（偏移20px）
-                    version.positions.push({
+                    // 确保positions是数组
+                    if (!Array.isArray(allVersions[currentVersion].positions)) {
+                        allVersions[currentVersion].positions = {};
+                    }
+                    // 添加新位置（偏移20px）
+                    const newIndex = items.length;
+                    allVersions[currentVersion].positions[newIndex] = {
                         x: oldPos.x + 20,
                         y: oldPos.y + 20
-                    });
+                    };
                 }
             }
 
@@ -2979,8 +3275,9 @@
             items.push(newItem);
 
             saveHistory();
+            renderElementList();
             selectItem(newItem.id);  // 自动选中新元素
-            generateAllVersions();
+            updatePreview();
         }
 
         // ========== 自动排版功能 ==========
@@ -3175,59 +3472,20 @@
         // 更新预览
         function updatePreview() {
             const container = document.getElementById('previewContainer');
-            const versionButtons = document.getElementById('versionButtons');
 
-            if (items.length === 0 || allVersions.length === 0) {
+            if (items.length === 0) {
                 container.innerHTML = '<div class="empty-state">添加对比项开始配置</div>';
-                versionButtons.innerHTML = '';
                 return;
             }
 
-            // 更新版本按钮
-            versionButtons.innerHTML = '';
-            for (let i = 0; i < allVersions.length; i++) {
-                const btn = document.createElement('button');
-                btn.className = 'version-btn';
-                btn.textContent = allVersions[i].name || `版本 ${i + 1}`;
-                btn.onclick = () => switchVersion(i);
-                if (i === currentVersion) {
-                    btn.classList.add('active');
-                }
-                
-                // 添加删除按钮
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-delete-version';
-                deleteBtn.textContent = '×';
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    deleteVersion(i);
-                };
-                btn.appendChild(deleteBtn);
-                
-                versionButtons.appendChild(btn);
-            }
-            
-            // 添加"新增版本"按钮
-            const addBtn = document.createElement('button');
-            addBtn.className = 'btn-add-version';
-            addBtn.textContent = '+ 新增版本';
-            addBtn.onclick = addVersion;
-            versionButtons.appendChild(addBtn);
-
             // 更新预览容器
-            let previewDiv = document.getElementById('previewContainer');
-            if (!previewDiv) {
-                previewDiv = document.createElement('div');
-                previewDiv.className = 'comparison-container';
-                previewDiv.id = 'previewContainer';
-                container.innerHTML = '';
-                container.appendChild(previewDiv);
-            } else {
-                previewDiv.className = 'comparison-container';
-                previewDiv.innerHTML = '';
-            }
+            container.innerHTML = '';
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'comparison-container';
+            previewDiv.id = 'previewContainer';
+            container.appendChild(previewDiv);
 
-            const currentVersionData = allVersions[currentVersion];
+            const currentVersionData = allVersions[currentVersion] || { positions: {} };
             const positions = currentVersionData.positions || {};
             
             items.forEach((item, itemIndex) => {
@@ -3380,23 +3638,39 @@
             e.stopPropagation();
 
             const item = items.find(i => i.id === itemId);
-            if (!item) return;
+            if (!item) {
+                console.warn('Item not found for resize:', itemId);
+                return;
+            }
 
             const textBoxContainer = document.getElementById(`text-box-container-${itemId}`);
             const textBox = textBoxContainer?.querySelector('.text-box');
-            if (!textBox) return;
+            if (!textBox) {
+                console.warn('Text box not found for resize:', itemId);
+                return;
+            }
 
+            // 确保获取正确的尺寸
             const rect = textBox.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) {
+                console.warn('Invalid text box dimensions:', rect);
+                return;
+            }
 
             resizingTextBox = {
                 itemId,
                 direction,
-                initialWidth: item.customWidth || rect.width,
-                initialHeight: item.customHeight || rect.height,
+                initialWidth: item.customWidth || Math.round(rect.width),
+                initialHeight: item.customHeight || Math.round(rect.height),
                 initialX: e.clientX,
                 initialY: e.clientY
             };
 
+            // 移除旧的事件监听器（如果存在）
+            document.removeEventListener('mousemove', handleTextBoxResize);
+            document.removeEventListener('mouseup', stopTextBoxResize);
+
+            // 添加新的事件监听器
             document.addEventListener('mousemove', handleTextBoxResize);
             document.addEventListener('mouseup', stopTextBoxResize);
         }
@@ -3405,9 +3679,14 @@
         function handleTextBoxResize(e) {
             if (!resizingTextBox) return;
 
+            e.preventDefault();
+
             const { itemId, direction, initialWidth, initialHeight, initialX, initialY } = resizingTextBox;
             const item = items.find(i => i.id === itemId);
-            if (!item) return;
+            if (!item) {
+                stopTextBoxResize();
+                return;
+            }
 
             const deltaX = e.clientX - initialX;
             const deltaY = e.clientY - initialY;
@@ -3427,10 +3706,11 @@
             newWidth = Math.max(100, newWidth);
             newHeight = Math.max(50, newHeight);
 
-            // 保存到item
-            if (!item.customWidth) item.customWidth = initialWidth;
-            if (!item.customHeight) item.customHeight = initialHeight;
+            // 最大尺寸限制（防止过大）
+            newWidth = Math.min(1200, newWidth);
+            newHeight = Math.min(800, newHeight);
 
+            // 保存到item
             item.customWidth = Math.round(newWidth);
             item.customHeight = Math.round(newHeight);
 
@@ -3447,11 +3727,19 @@
         // 停止文本框大小调整
         function stopTextBoxResize() {
             if (resizingTextBox) {
+                // 完成调整后更新
+                const itemId = resizingTextBox.itemId;
+                resizingTextBox = null; // 先清空，避免重复触发
+
                 saveHistory();
                 renderElementList();
                 renderEditPanel(selectedItemId);
+                generateAllVersions();
+            } else {
+                resizingTextBox = null;
             }
-            resizingTextBox = null;
+
+            // 确保移除事件监听器
             document.removeEventListener('mousemove', handleTextBoxResize);
             document.removeEventListener('mouseup', stopTextBoxResize);
         }
@@ -3831,45 +4119,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>标题（可选）</label>
-                    <input type="text" value="${item.title}" placeholder="留空则不显示标题"
-                           data-field="title">
-                </div>
-                <div class="form-group">
-                    <label>副标题（可选）</label>
-                    <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
-                           data-field="subtitle">
-                </div>
-                <div class="form-group">
-                    <label>颜色预设</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-                        ${colorPresets.map(preset => `
-                            <button class="color-preset-btn"
-                                    style="background: ${preset.bg}; color: ${preset.text}; padding: 6px 12px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;"
-                                    data-action="updateEditorItem" data-field="color" data-value="${preset.bg}">
-                                ${preset.name}
-                            </button>
-                        `).join('')}
-                    </div>
-                    <label>自定义颜色</label>
-                    <input type="color" value="${item.color}"
-                           data-field="color">
-                </div>
                 ${item.displayStyle === 'icon' ? `
-                    <div class="form-group">
-                        <label>形状</label>
-                        <div class="button-group">
-                            <button class="option-btn ${item.shape === 'circle' ? 'active' : ''}"
-                                    data-action="updateEditorItem" data-field="shape" data-value="circle">
-                                ⭕ 圆形
-                            </button>
-                            <button class="option-btn ${item.shape === 'square' ? 'active' : ''}"
-                                    data-action="updateEditorItem" data-field="shape" data-value="square">
-                                ◻️ 方形
-                            </button>
-                        </div>
-                    </div>
                     <div class="form-group">
                         <label>Emoji</label>
                         <div id="editor-emojis-${item.id}"></div>
@@ -3885,6 +4135,44 @@
                             支持Markdown：<code>**粗体**</code> <code>*斜体*</code> <code>~~删除线~~</code> <code>==高亮==</code> <code>[stroke]描边[/stroke]</code>
                         </div>
                     </div>
+                `}
+                <div class="form-group">
+                    <label>背景颜色</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        ${colorPresets.map(preset => `
+                            <button class="color-preset-btn"
+                                    style="background: ${preset.bg}; color: ${preset.text}; padding: 6px 12px; border: 2px solid ${item.color === preset.bg ? '#000' : 'transparent'}; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;"
+                                    data-action="updateEditorItem" data-field="color" data-value="${preset.bg}">
+                                ${preset.name}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>标题（可选）</label>
+                    <input type="text" value="${item.title}" placeholder="留空则不显示标题"
+                           data-field="title">
+                </div>
+                <div class="form-group">
+                    <label>副标题（可选）</label>
+                    <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
+                           data-field="subtitle">
+                </div>
+                ${item.displayStyle === 'icon' ? `
+                    <div class="form-group">
+                        <label>形状</label>
+                        <div class="button-group">
+                            <button class="option-btn ${item.shape === 'circle' ? 'active' : ''}"
+                                    data-action="updateEditorItem" data-field="shape" data-value="circle">
+                                ⭕ 圆形
+                            </button>
+                            <button class="option-btn ${item.shape === 'square' ? 'active' : ''}"
+                                    data-action="updateEditorItem" data-field="shape" data-value="square">
+                                ◻️ 方形
+                            </button>
+                        </div>
+                    </div>
+                ` : `
                     <div class="form-group">
                         <label>文本框样式</label>
                         <div class="button-group">
