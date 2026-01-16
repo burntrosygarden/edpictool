@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教学视觉对比图生成器</title>
+    <title>有限元素画布</title>
     <style>
         * {
             margin: 0;
@@ -816,22 +816,33 @@
         .floating-editor {
             display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 20px;
+            right: 20px;
+            bottom: 20px;
+            transform: translateX(0);
             background: white;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             z-index: 2000;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
+            width: 400px;
+            max-height: calc(100vh - 40px);
             overflow-y: auto;
+            transition: transform 0.3s ease;
         }
 
         .floating-editor.show {
             display: block;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
         }
 
         .floating-editor-header {
@@ -871,8 +882,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.2);
             z-index: 1999;
+            pointer-events: none;
         }
 
         .floating-editor-overlay.show {
@@ -1370,7 +1382,7 @@
 </head>
 <body>
     <div class="app-header">
-        <h1>📚 教学视觉对比图生成器</h1>
+        <h1>🎨 有限元素画布</h1>
         <div class="header-actions">
             <button class="btn btn-history" id="undoBtn" onclick="undo()" disabled>↶ 撤销</button>
             <button class="btn btn-history" id="redoBtn" onclick="redo()" disabled>↷ 重做</button>
@@ -1718,6 +1730,7 @@
             let itemsHTML = '';
             const hasTitle = items.some(it => it.title || it.subtitle);
             const horizontalSpacing = hasTitle ? 280 : 220;
+            const layoutClass = ''; // 使用绝对定位布局
 
             items.forEach((item, itemIndex) => {
                 const emoji = combination[itemIndex] || '';
@@ -1763,7 +1776,7 @@
 
                     const decorativeEmojis = item.decorativeEmojis || [];
                     const decorativeEmojisHTML = decorativeEmojis.map(deco => `
-                        <span class="decorative-emoji" style="position: absolute; left: ${deco.x}%; top: ${deco.y}%; transform: translate(-50%, -50%); font-size: ${deco.fontSize || 32}px; cursor: default; user-select: none; pointer-events: none;">
+                        <span class="decorative-emoji" style="position: absolute; left: ${deco.x}px; top: ${deco.y}px; font-size: ${deco.fontSize || 32}px; cursor: default; user-select: none; pointer-events: none;">
                             ${deco.emoji}
                         </span>
                     `).join('');
@@ -1821,7 +1834,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
             min-width: 200px;
             max-width: 350px;
             position: absolute;
@@ -1888,7 +1901,10 @@
             font-size: 32px;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+        }
+        .title:last-child {
+            margin-bottom: 0;
         }
         .subtitle {
             font-size: 20px;
