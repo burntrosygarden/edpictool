@@ -2993,15 +2993,20 @@
             newItem.id = Date.now();
 
             // 如果有位置信息，稍微偏移
-            const version = allVersions[currentVersion];
-            if (version && version.positions) {
-                const oldPos = version.positions[items.indexOf(item)];
+            if (allVersions[currentVersion] && allVersions[currentVersion].positions) {
+                const oldItemIndex = items.indexOf(item);
+                const oldPos = allVersions[currentVersion].positions[oldItemIndex];
                 if (oldPos) {
-                    // 在当前版本的positions中添加新位置（偏移20px）
-                    version.positions.push({
+                    // 确保positions是数组
+                    if (!Array.isArray(allVersions[currentVersion].positions)) {
+                        allVersions[currentVersion].positions = {};
+                    }
+                    // 添加新位置（偏移20px）
+                    const newIndex = items.length;
+                    allVersions[currentVersion].positions[newIndex] = {
                         x: oldPos.x + 20,
                         y: oldPos.y + 20
-                    });
+                    };
                 }
             }
 
@@ -3009,8 +3014,9 @@
             items.push(newItem);
 
             saveHistory();
+            renderElementList();
             selectItem(newItem.id);  // 自动选中新元素
-            generateAllVersions();
+            updatePreview();
         }
 
         // ========== 自动排版功能 ==========
