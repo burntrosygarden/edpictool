@@ -2261,8 +2261,8 @@
             generateAllVersions();
         }
 
-        // 插入Markdown样式
-        function insertMarkdown(itemId, style) {
+        // 插入或移除Markdown样式（toggle）
+        function insertMarkdown(itemId, style, color = null) {
             const textarea = document.getElementById(`textarea-${itemId}`);
             if (!textarea) return;
 
@@ -2272,33 +2272,57 @@
             const beforeText = textarea.value.substring(0, start);
             const afterText = textarea.value.substring(end);
 
-            let wrappedText = '';
-            let cursorOffset = 0;
+            let prefix = '', suffix = '';
+            let newText = '';
+            let newCursorPos = start;
 
+            // 定义各种样式的标记
             switch(style) {
                 case 'bold':
-                    wrappedText = `**${selectedText || '文字'}**`;
-                    cursorOffset = selectedText ? 0 : -2;
+                    prefix = '**'; suffix = '**';
                     break;
                 case 'italic':
-                    wrappedText = `*${selectedText || '文字'}*`;
-                    cursorOffset = selectedText ? 0 : -1;
+                    prefix = '*'; suffix = '*';
                     break;
                 case 'strikethrough':
-                    wrappedText = `~~${selectedText || '文字'}~~`;
-                    cursorOffset = selectedText ? 0 : -2;
+                    prefix = '~~'; suffix = '~~';
                     break;
                 case 'highlight':
-                    wrappedText = `==${selectedText || '文字'}==`;
-                    cursorOffset = selectedText ? 0 : -2;
+                    if (color) {
+                        prefix = `[highlight:${color}]`; suffix = '[/highlight]';
+                    } else {
+                        prefix = '=='; suffix = '==';
+                    }
                     break;
                 case 'stroke':
-                    wrappedText = `[stroke]${selectedText || '文字'}[/stroke]`;
-                    cursorOffset = selectedText ? 0 : -9;
+                    prefix = '[stroke]'; suffix = '[/stroke]';
                     break;
             }
 
-            const newText = beforeText + wrappedText + afterText;
+            // 检查是否已经有样式标记（toggle功能）
+            const extendedStart = Math.max(0, start - prefix.length);
+            const extendedEnd = Math.min(textarea.value.length, end + suffix.length);
+            const extendedText = textarea.value.substring(extendedStart, extendedEnd);
+
+            // 检查是否被标记包围
+            if (extendedText.startsWith(prefix) && extendedText.endsWith(suffix)) {
+                // 移除标记
+                const unwrappedText = extendedText.substring(prefix.length, extendedText.length - suffix.length);
+                newText = textarea.value.substring(0, extendedStart) + unwrappedText + textarea.value.substring(extendedEnd);
+                newCursorPos = extendedStart + unwrappedText.length;
+            } else if (selectedText) {
+                // 添加标记到选中文本
+                const wrappedText = prefix + selectedText + suffix;
+                newText = beforeText + wrappedText + afterText;
+                newCursorPos = start + wrappedText.length;
+            } else {
+                // 没有选中文本，插入占位符
+                const placeholder = '文字';
+                const wrappedText = prefix + placeholder + suffix;
+                newText = beforeText + wrappedText + afterText;
+                newCursorPos = start + prefix.length + placeholder.length;
+            }
+
             textarea.value = newText;
 
             // 更新数据
@@ -2307,7 +2331,6 @@
             generateAllVersions();
 
             // 设置光标位置
-            const newCursorPos = start + wrappedText.length + cursorOffset;
             textarea.focus();
             textarea.setSelectionRange(newCursorPos, newCursorPos);
         }
@@ -2495,10 +2518,13 @@
                             <div class="form-group">
                                 <label>文本框内容</label>
                                 <div class="text-toolbar">
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'bold')" title="加粗">B</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'bold')" title="加粗" style="font-weight: bold;">B</button>
                                     <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'italic')" title="斜体" style="font-style: italic;">I</button>
                                     <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'strikethrough')" title="删除线" style="text-decoration: line-through;">S</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight')" title="高亮" style="background: #fef08a;">H</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#ffff00')" title="黄色高亮" style="background: #fef08a;">H</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#ff0000')" title="红色高亮" style="background: #fecaca; color: #991b1b;">H</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#00ff00')" title="绿色高亮" style="background: #bbf7d0; color: #166534;">H</button>
+                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#00bfff')" title="蓝色高亮" style="background: #bfdbfe; color: #1e40af;">H</button>
                                     <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'stroke')" title="描边">描边</button>
                                 </div>
                                 <div class="input-wrapper">
