@@ -637,6 +637,54 @@
             background: #d1d5db;
         }
 
+        /* 富文本编辑器 */
+        .rich-text-editor {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            line-height: 1.6;
+            outline: none;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .rich-text-editor:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .rich-text-editor:empty:before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        .rich-text-editor strong {
+            font-weight: 700;
+        }
+
+        .rich-text-editor em {
+            font-style: italic;
+        }
+
+        .rich-text-editor s {
+            text-decoration: line-through;
+        }
+
+        .rich-text-editor .highlight {
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .rich-text-editor .stroke-text {
+            -webkit-text-stroke: 2px #000000;
+            paint-order: stroke fill;
+        }
+
         /* 预览面板 */
         .preview-panel {
             flex: 1;
@@ -2261,78 +2309,168 @@
             generateAllVersions();
         }
 
-        // 插入或移除Markdown样式（toggle）
-        function insertMarkdown(itemId, style, color = null) {
-            const textarea = document.getElementById(`textarea-${itemId}`);
-            if (!textarea) return;
+        // HTML转Markdown（改进版，支持嵌套标签）
+        function htmlToMarkdown(html) {
+            if (!html) return '';
 
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selectedText = textarea.value.substring(start, end);
-            const beforeText = textarea.value.substring(0, start);
-            const afterText = textarea.value.substring(end);
+            let text = html;
 
-            let prefix = '', suffix = '';
-            let newText = '';
-            let newCursorPos = start;
+            // 处理换行和空格
+            text = text.replace(/<br\s*\/?>/gi, '\n');
+            text = text.replace(/<\/div><div>/gi, '\n');
+            text = text.replace(/<div>/gi, '');
+            text = text.replace(/<\/div>/gi, '\n');
+            text = text.replace(/&nbsp;/g, ' ');
 
-            // 定义各种样式的标记
+            // 处理格式化标签（从内到外，支持嵌套）
+            // 使用多次迭代处理嵌套标签
+            let maxIterations = 10;
+            let iteration = 0;
+            while ((text.includes('<') && text.includes('>')) && iteration < maxIterations) {
+                let changed = false;
+
+                // 高亮（优先处理，因为最外层）
+                if (text.match(/<span class="highlight" style="background-color:\s*([^;"]+);?">(.*?)<\/span>/)) {
+                    text = text.replace(/<span class="highlight" style="background-color:\s*([^;"]+);?">(.*?)<\/span>/g, '[highlight:$1]$2[/highlight]');
+                    changed = true;
+                }
+
+                // 描边
+                if (text.match(/<span class="stroke-text">(.*?)<\/span>/)) {
+                    text = text.replace(/<span class="stroke-text">(.*?)<\/span>/g, '[stroke]$1[/stroke]');
+                    changed = true;
+                }
+
+                // 粗体
+                if (text.match(/<(strong|b)>(.*?)<\/(strong|b)>/)) {
+                    text = text.replace(/<strong>(.*?)<\/strong>/g, '**$1**');
+                    text = text.replace(/<b>(.*?)<\/b>/g, '**$1**');
+                    changed = true;
+                }
+
+                // 斜体
+                if (text.match(/<(em|i)>(.*?)<\/(em|i)>/)) {
+                    text = text.replace(/<em>(.*?)<\/em>/g, '*$1*');
+                    text = text.replace(/<i>(.*?)<\/i>/g, '*$1*');
+                    changed = true;
+                }
+
+                // 删除线
+                if (text.match(/<s>(.*?)<\/s>/)) {
+                    text = text.replace(/<s>(.*?)<\/s>/g, '~~$1~~');
+                    changed = true;
+                }
+
+                if (!changed) break;
+                iteration++;
+            }
+
+            // HTML实体解码
+            text = text.replace(/&lt;/g, '<');
+            text = text.replace(/&gt;/g, '>');
+            text = text.replace(/&amp;/g, '&');
+            text = text.replace(/&quot;/g, '"');
+
+            return text.trim();
+        }
+
+        // Markdown转HTML（用于显示）
+        function markdownToHtml(markdown) {
+            if (!markdown) return '';
+
+            let html = markdown;
+
+            // 转义HTML
+            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Markdown到HTML
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            html = html.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+            html = html.replace(/\[highlight:([^\]]+)\](.*?)\[\/highlight\]/g, '<span class="highlight" style="background-color: $1;">$2</span>');
+            html = html.replace(/\[stroke\](.*?)\[\/stroke\]/g, '<span class="stroke-text">$1</span>');
+            html = html.replace(/\n/g, '<br>');
+
+            return html;
+        }
+
+        // 应用富文本样式（支持toggle）
+        function applyRichTextStyle(itemId, style, color = null) {
+            const editor = document.getElementById(`editor-${itemId}`);
+            if (!editor) return;
+
+            editor.focus();
+
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+
             switch(style) {
                 case 'bold':
-                    prefix = '**'; suffix = '**';
+                    document.execCommand('bold', false, null);
                     break;
                 case 'italic':
-                    prefix = '*'; suffix = '*';
+                    document.execCommand('italic', false, null);
                     break;
                 case 'strikethrough':
-                    prefix = '~~'; suffix = '~~';
+                    document.execCommand('strikeThrough', false, null);
                     break;
                 case 'highlight':
                     if (color) {
-                        prefix = `[highlight:${color}]`; suffix = '[/highlight]';
-                    } else {
-                        prefix = '=='; suffix = '==';
+                        // 检查选中的内容是否已经有高亮
+                        const parentElement = range.commonAncestorContainer.parentElement;
+                        if (parentElement && parentElement.classList && parentElement.classList.contains('highlight')) {
+                            // 移除高亮：提取内容并替换父元素
+                            const content = parentElement.textContent;
+                            const textNode = document.createTextNode(content);
+                            parentElement.parentNode.replaceChild(textNode, parentElement);
+                        } else {
+                            // 添加高亮
+                            const span = document.createElement('span');
+                            span.className = 'highlight';
+                            span.style.backgroundColor = color;
+
+                            try {
+                                range.surroundContents(span);
+                            } catch(e) {
+                                // 如果选中跨越多个元素，使用另一种方法
+                                const fragment = range.extractContents();
+                                span.appendChild(fragment);
+                                range.insertNode(span);
+                            }
+                        }
                     }
                     break;
                 case 'stroke':
-                    prefix = '[stroke]'; suffix = '[/stroke]';
+                    // 检查选中的内容是否已经有描边
+                    const parentElement = range.commonAncestorContainer.parentElement;
+                    if (parentElement && parentElement.classList && parentElement.classList.contains('stroke-text')) {
+                        // 移除描边
+                        const content = parentElement.textContent;
+                        const textNode = document.createTextNode(content);
+                        parentElement.parentNode.replaceChild(textNode, parentElement);
+                    } else {
+                        // 添加描边
+                        const span = document.createElement('span');
+                        span.className = 'stroke-text';
+
+                        try {
+                            range.surroundContents(span);
+                        } catch(e) {
+                            const fragment = range.extractContents();
+                            span.appendChild(fragment);
+                            range.insertNode(span);
+                        }
+                    }
                     break;
             }
 
-            // 检查是否已经有样式标记（toggle功能）
-            const extendedStart = Math.max(0, start - prefix.length);
-            const extendedEnd = Math.min(textarea.value.length, end + suffix.length);
-            const extendedText = textarea.value.substring(extendedStart, extendedEnd);
-
-            // 检查是否被标记包围
-            if (extendedText.startsWith(prefix) && extendedText.endsWith(suffix)) {
-                // 移除标记
-                const unwrappedText = extendedText.substring(prefix.length, extendedText.length - suffix.length);
-                newText = textarea.value.substring(0, extendedStart) + unwrappedText + textarea.value.substring(extendedEnd);
-                newCursorPos = extendedStart + unwrappedText.length;
-            } else if (selectedText) {
-                // 添加标记到选中文本
-                const wrappedText = prefix + selectedText + suffix;
-                newText = beforeText + wrappedText + afterText;
-                newCursorPos = start + wrappedText.length;
-            } else {
-                // 没有选中文本，插入占位符
-                const placeholder = '文字';
-                const wrappedText = prefix + placeholder + suffix;
-                newText = beforeText + wrappedText + afterText;
-                newCursorPos = start + prefix.length + placeholder.length;
-            }
-
-            textarea.value = newText;
-
-            // 更新数据
-            updateItem(itemId, 'boxContent', newText);
+            // 更新内容
+            const markdown = htmlToMarkdown(editor.innerHTML);
+            updateItem(itemId, 'boxContent', markdown);
             renderElementList();
             generateAllVersions();
-
-            // 设置光标位置
-            textarea.focus();
-            textarea.setSelectionRange(newCursorPos, newCursorPos);
         }
 
         // 拖拽功能
@@ -2518,19 +2656,22 @@
                             <div class="form-group">
                                 <label>文本框内容</label>
                                 <div class="text-toolbar">
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'bold')" title="加粗" style="font-weight: bold;">B</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'italic')" title="斜体" style="font-style: italic;">I</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'strikethrough')" title="删除线" style="text-decoration: line-through;">S</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#ffff00')" title="黄色高亮" style="background: #fef08a;">H</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#ff0000')" title="红色高亮" style="background: #fecaca; color: #991b1b;">H</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#00ff00')" title="绿色高亮" style="background: #bbf7d0; color: #166534;">H</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'highlight', '#00bfff')" title="蓝色高亮" style="background: #bfdbfe; color: #1e40af;">H</button>
-                                    <button class="toolbar-btn" onclick="insertMarkdown(${item.id}, 'stroke')" title="描边">描边</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'bold')" title="加粗" style="font-weight: bold;">B</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'italic')" title="斜体" style="font-style: italic;">I</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'strikethrough')" title="删除线" style="text-decoration: line-through;">S</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#ffff00')" title="黄色高亮" style="background: #fef08a;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#ff0000')" title="红色高亮" style="background: #fecaca; color: #991b1b;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#00ff00')" title="绿色高亮" style="background: #bbf7d0; color: #166534;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'highlight', '#00bfff')" title="蓝色高亮" style="background: #bfdbfe; color: #1e40af;">H</button>
+                                    <button class="toolbar-btn" onclick="applyRichTextStyle(${item.id}, 'stroke')" title="描边">描边</button>
                                 </div>
-                                <div class="input-wrapper">
-                                    <textarea id="textarea-${item.id}" placeholder="输入文字和emoji" rows="4"
-                                              oninput="updateItem(${item.id}, 'boxContent', this.value); generateAllVersions(); renderElementList();">${item.boxContent}</textarea>
-                                    <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
+                                <div class="input-wrapper" style="position: relative;">
+                                    <div id="editor-${item.id}"
+                                         class="rich-text-editor"
+                                         contenteditable="true"
+                                         placeholder="输入文字和emoji"
+                                         oninput="updateItem(${item.id}, 'boxContent', htmlToMarkdown(this.innerHTML)); renderElementList();">${markdownToHtml(item.boxContent)}</div>
+                                    <button class="btn-clear-input" type="button" style="position: absolute; top: 8px; right: 8px;" onclick="document.getElementById('editor-${item.id}').innerHTML = ''; updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
                                 </div>
                             </div>
                         `}
@@ -3497,23 +3638,39 @@
             e.stopPropagation();
 
             const item = items.find(i => i.id === itemId);
-            if (!item) return;
+            if (!item) {
+                console.warn('Item not found for resize:', itemId);
+                return;
+            }
 
             const textBoxContainer = document.getElementById(`text-box-container-${itemId}`);
             const textBox = textBoxContainer?.querySelector('.text-box');
-            if (!textBox) return;
+            if (!textBox) {
+                console.warn('Text box not found for resize:', itemId);
+                return;
+            }
 
+            // 确保获取正确的尺寸
             const rect = textBox.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) {
+                console.warn('Invalid text box dimensions:', rect);
+                return;
+            }
 
             resizingTextBox = {
                 itemId,
                 direction,
-                initialWidth: item.customWidth || rect.width,
-                initialHeight: item.customHeight || rect.height,
+                initialWidth: item.customWidth || Math.round(rect.width),
+                initialHeight: item.customHeight || Math.round(rect.height),
                 initialX: e.clientX,
                 initialY: e.clientY
             };
 
+            // 移除旧的事件监听器（如果存在）
+            document.removeEventListener('mousemove', handleTextBoxResize);
+            document.removeEventListener('mouseup', stopTextBoxResize);
+
+            // 添加新的事件监听器
             document.addEventListener('mousemove', handleTextBoxResize);
             document.addEventListener('mouseup', stopTextBoxResize);
         }
@@ -3522,9 +3679,14 @@
         function handleTextBoxResize(e) {
             if (!resizingTextBox) return;
 
+            e.preventDefault();
+
             const { itemId, direction, initialWidth, initialHeight, initialX, initialY } = resizingTextBox;
             const item = items.find(i => i.id === itemId);
-            if (!item) return;
+            if (!item) {
+                stopTextBoxResize();
+                return;
+            }
 
             const deltaX = e.clientX - initialX;
             const deltaY = e.clientY - initialY;
@@ -3544,10 +3706,11 @@
             newWidth = Math.max(100, newWidth);
             newHeight = Math.max(50, newHeight);
 
-            // 保存到item
-            if (!item.customWidth) item.customWidth = initialWidth;
-            if (!item.customHeight) item.customHeight = initialHeight;
+            // 最大尺寸限制（防止过大）
+            newWidth = Math.min(1200, newWidth);
+            newHeight = Math.min(800, newHeight);
 
+            // 保存到item
             item.customWidth = Math.round(newWidth);
             item.customHeight = Math.round(newHeight);
 
@@ -3564,11 +3727,19 @@
         // 停止文本框大小调整
         function stopTextBoxResize() {
             if (resizingTextBox) {
+                // 完成调整后更新
+                const itemId = resizingTextBox.itemId;
+                resizingTextBox = null; // 先清空，避免重复触发
+
                 saveHistory();
                 renderElementList();
                 renderEditPanel(selectedItemId);
+                generateAllVersions();
+            } else {
+                resizingTextBox = null;
             }
-            resizingTextBox = null;
+
+            // 确保移除事件监听器
             document.removeEventListener('mousemove', handleTextBoxResize);
             document.removeEventListener('mouseup', stopTextBoxResize);
         }
