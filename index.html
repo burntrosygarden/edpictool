@@ -972,7 +972,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
             position: absolute;
             min-width: 200px;
             max-width: 350px;
@@ -1122,13 +1122,18 @@
             font-size: 32px;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .subtitle {
             font-size: 20px;
             font-weight: 500;
             color: #666;
+        }
+
+        /* 当只有标题或只有副标题时，移除底部边距 */
+        .title:last-child {
+            margin-bottom: 0;
         }
 
         .empty-state {
@@ -2867,6 +2872,10 @@
             const item = items.find(i => i.id === id);
             if (item) {
                 item[field] = value;
+                // 重新渲染编辑面板以更新选中状态
+                if (selectedItemId === id) {
+                    renderEditPanel(id);
+                }
             }
         }
 
@@ -3352,6 +3361,17 @@
                     });
                 }
             });
+
+            // 点击空白处取消选中
+            previewDiv.onclick = (e) => {
+                if (e.target === previewDiv || e.target.classList.contains('comparison-container')) {
+                    selectedItemId = null;
+                    selectedDecorativeEmoji = null;
+                    renderElementList();
+                    renderEditPanel(null);
+                    updatePreview();
+                }
+            };
         }
 
         // 开始调整文本框大小
@@ -3693,9 +3713,24 @@
             let newX = (item.decorativeEmojis[decoIndex].x || 0) + deltaX;
             let newY = (item.decorativeEmojis[decoIndex].y || 0) + deltaY;
 
-            // 限制移动范围（相对于文本框容器，可以移动到±200px范围内）
-            newX = Math.max(-200, Math.min(200, newX));
-            newY = Math.max(-200, Math.min(200, newY));
+            // 获取文本框容器的尺寸来限制移动范围
+            const textBoxContainer = document.querySelector(`#text-box-container-${itemId}`);
+            if (textBoxContainer) {
+                const containerRect = textBoxContainer.getBoundingClientRect();
+                const textBox = textBoxContainer.querySelector('.text-box');
+                if (textBox) {
+                    const textBoxRect = textBox.getBoundingClientRect();
+                    const emojiSize = item.decorativeEmojis[decoIndex].fontSize || 32;
+
+                    // 计算文本框相对于容器的位置和尺寸
+                    const maxX = textBoxRect.width - emojiSize;
+                    const maxY = textBoxRect.height - emojiSize;
+
+                    // 限制移动范围在文本框内
+                    newX = Math.max(0, Math.min(maxX, newX));
+                    newY = Math.max(0, Math.min(maxY, newY));
+                }
+            }
 
             item.decorativeEmojis[decoIndex].x = newX;
             item.decorativeEmojis[decoIndex].y = newY;
