@@ -2147,6 +2147,15 @@
 
         // 生成所有版本
         function generateAllVersions() {
+            // 如果正在调整大小或拖拽，延迟更新避免干扰
+            if (resizingTextBox || resizingEmoji || draggedPreviewItem || draggedDecoEmoji) {
+                clearTimeout(window.delayedGenerateTimeout);
+                window.delayedGenerateTimeout = setTimeout(() => {
+                    generateAllVersions();
+                }, 100);
+                return;
+            }
+
             if (items.length === 0) {
                 allVersions = [];
                 updatePreview();
@@ -2468,8 +2477,7 @@
 
             // 更新内容
             const markdown = htmlToMarkdown(editor.innerHTML);
-            updateItem(itemId, 'boxContent', markdown);
-            renderElementList();
+            updateItem(itemId, 'boxContent', markdown, false);
             generateAllVersions();
         }
 
@@ -2670,7 +2678,7 @@
                                          class="rich-text-editor"
                                          contenteditable="true"
                                          placeholder="输入文字和emoji"
-                                         oninput="updateItem(${item.id}, 'boxContent', htmlToMarkdown(this.innerHTML)); renderElementList();">${markdownToHtml(item.boxContent)}</div>
+                                         oninput="updateItem(${item.id}, 'boxContent', htmlToMarkdown(this.innerHTML), false); debouncedSaveHistory();">${markdownToHtml(item.boxContent)}</div>
                                     <button class="btn-clear-input" type="button" style="position: absolute; top: 8px; right: 8px;" onclick="document.getElementById('editor-${item.id}').innerHTML = ''; updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
                                 </div>
                             </div>
@@ -2691,7 +2699,7 @@
                             <label>标题（可选）</label>
                             <div class="input-wrapper">
                                 <input type="text" value="${item.title}" placeholder="留空则不显示标题"
-                                       oninput="updateItem(${item.id}, 'title', this.value); generateAllVersions(); renderElementList();">
+                                       oninput="updateItem(${item.id}, 'title', this.value, false); generateAllVersions(); debouncedSaveHistory();">
                                 <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'title', ''); selectItem(${item.id}); generateAllVersions();">×</button>
                             </div>
                         </div>
@@ -2699,7 +2707,7 @@
                             <label>副标题（可选）</label>
                             <div class="input-wrapper">
                                 <input type="text" value="${item.subtitle}" placeholder="留空则不显示副标题"
-                                       oninput="updateItem(${item.id}, 'subtitle', this.value); generateAllVersions(); renderElementList();">
+                                       oninput="updateItem(${item.id}, 'subtitle', this.value, false); generateAllVersions(); debouncedSaveHistory();">
                                 <button class="btn-clear-input" type="button" onclick="updateItem(${item.id}, 'subtitle', ''); selectItem(${item.id}); generateAllVersions();">×</button>
                             </div>
                         </div>
@@ -3159,12 +3167,12 @@
         }
 
         // 更新对比项配置
-        function updateItem(id, field, value) {
+        function updateItem(id, field, value, shouldRerender = true) {
             const item = items.find(i => i.id === id);
             if (item) {
                 item[field] = value;
-                // 重新渲染编辑面板以更新选中状态
-                if (selectedItemId === id) {
+                // 重新渲染编辑面板以更新选中状态（除非明确禁止）
+                if (shouldRerender && selectedItemId === id) {
                     renderEditPanel(id);
                 }
             }
@@ -3197,6 +3205,15 @@
             }
 
             updateHistoryButtons();
+        }
+
+        // 防抖的历史记录保存（用于输入框）
+        let saveHistoryTimeout = null;
+        function debouncedSaveHistory() {
+            clearTimeout(saveHistoryTimeout);
+            saveHistoryTimeout = setTimeout(() => {
+                saveHistory();
+            }, 800);
         }
 
         // 更新历史记录按钮状态
@@ -3733,7 +3750,7 @@
 
                 saveHistory();
                 renderElementList();
-                renderEditPanel(selectedItemId);
+                // 移除 renderEditPanel 调用，避免干扰用户编辑操作
                 generateAllVersions();
             } else {
                 resizingTextBox = null;
@@ -3857,7 +3874,7 @@
             if (resizingEmoji) {
                 saveHistory();
                 renderElementList();
-                renderEditPanel(selectedItemId);
+                // 移除 renderEditPanel 调用，避免干扰用户编辑操作
             }
             resizingEmoji = null;
             document.removeEventListener('mousemove', handleEmojiResize);
