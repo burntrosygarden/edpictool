@@ -2374,6 +2374,9 @@
                 iteration++;
             }
 
+            // 清除所有剩余的HTML标签（防止未处理的标签显示给用户）
+            text = text.replace(/<[^>]+>/g, '');
+
             // HTML实体解码
             text = text.replace(/&lt;/g, '<');
             text = text.replace(/&gt;/g, '>');
@@ -2678,7 +2681,7 @@
                                          class="rich-text-editor"
                                          contenteditable="true"
                                          placeholder="输入文字和emoji"
-                                         oninput="updateItem(${item.id}, 'boxContent', htmlToMarkdown(this.innerHTML), false); debouncedSaveHistory();">${markdownToHtml(item.boxContent)}</div>
+                                         oninput="updateItem(${item.id}, 'boxContent', htmlToMarkdown(this.innerHTML), false); generateAllVersions(); debouncedSaveHistory();">${markdownToHtml(item.boxContent)}</div>
                                     <button class="btn-clear-input" type="button" style="position: absolute; top: 8px; right: 8px;" onclick="document.getElementById('editor-${item.id}').innerHTML = ''; updateItem(${item.id}, 'boxContent', ''); selectItem(${item.id}); generateAllVersions();">×</button>
                                 </div>
                             </div>
