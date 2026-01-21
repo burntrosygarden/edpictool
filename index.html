@@ -2377,6 +2377,13 @@
             // 清除所有剩余的HTML标签（防止未处理的标签显示给用户）
             text = text.replace(/<[^>]+>/g, '');
 
+            // 清除不匹配的markdown标签（防止显示给用户）
+            // 移除没有配对的开始或结束标签
+            text = text.replace(/\[\/stroke\]/g, ''); // 移除孤立的结束标签
+            text = text.replace(/\[stroke\](?!\s*\S)/g, ''); // 移除后面没有内容的开始标签
+            text = text.replace(/\[\/highlight\]/g, ''); // 移除孤立的highlight结束标签
+            text = text.replace(/\[highlight:[^\]]+\](?!\s*\S)/g, ''); // 移除后面没有内容的highlight开始标签
+
             // HTML实体解码
             text = text.replace(/&lt;/g, '<');
             text = text.replace(/&gt;/g, '>');
@@ -2430,7 +2437,21 @@
                     break;
                 case 'highlight':
                     if (color) {
-                        // 检查选中的内容是否已经有高亮
+                        // 检查是否有选中内容
+                        if (range.collapsed) {
+                            // 没有选中文字，检查光标是否在高亮元素内
+                            const parentElement = range.commonAncestorContainer.parentElement;
+                            if (parentElement && parentElement.classList && parentElement.classList.contains('highlight')) {
+                                // 移除整个高亮元素
+                                const content = parentElement.textContent;
+                                const textNode = document.createTextNode(content);
+                                parentElement.parentNode.replaceChild(textNode, parentElement);
+                            }
+                            // 如果不在高亮元素内，不做任何操作
+                            return;
+                        }
+
+                        // 有选中内容，检查是否已经有高亮
                         const parentElement = range.commonAncestorContainer.parentElement;
                         if (parentElement && parentElement.classList && parentElement.classList.contains('highlight')) {
                             // 移除高亮：提取内容并替换父元素
@@ -2455,7 +2476,21 @@
                     }
                     break;
                 case 'stroke':
-                    // 检查选中的内容是否已经有描边
+                    // 检查是否有选中内容
+                    if (range.collapsed) {
+                        // 没有选中文字，检查光标是否在描边元素内
+                        const parentElement = range.commonAncestorContainer.parentElement;
+                        if (parentElement && parentElement.classList && parentElement.classList.contains('stroke-text')) {
+                            // 移除整个描边元素
+                            const content = parentElement.textContent;
+                            const textNode = document.createTextNode(content);
+                            parentElement.parentNode.replaceChild(textNode, parentElement);
+                        }
+                        // 如果不在描边元素内，不做任何操作
+                        return;
+                    }
+
+                    // 有选中内容，检查是否已经有描边
                     const parentElement = range.commonAncestorContainer.parentElement;
                     if (parentElement && parentElement.classList && parentElement.classList.contains('stroke-text')) {
                         // 移除描边
